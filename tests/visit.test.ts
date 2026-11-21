@@ -8,7 +8,7 @@ const at = (d: string, hhmm: string) => `2026-11-${d}T${hhmm}:00+05:30`
 let n = 0
 const ev = (type: string, start: string, data: Record<string, unknown> = {}, end: string | null = null, notes: string | null = null) =>
   ({ id: `e${++n}`, family_id: 'f', child_id: 'c', type, started_at: new Date(start).toISOString(), ended_at: end && new Date(end).toISOString(), timer_state: null, deleted_at: null, data, notes, photo_paths: [], created_by: 'u', updated_by: 'u', created_at: '', updated_at: '' }) as never
-const child = { id: 'c', family_id: 'f', name: 'Leela', birth_date: '2026-07-22', settings: { supplements: [{ name: 'Vitamin D' }] } } as never
+const child = { id: 'c', family_id: 'f', name: 'Leela', birth_date: '2026-07-22', settings: { supplements: [{ id: 'vitd', name: 'Vitamin D' }] } } as never
 const events = [
   ev('growth', at('01', '10:00'), { weight_kg: 5.6 }),
   ev('symptom', at('02', '11:00'), { kind: 'visit' }),
