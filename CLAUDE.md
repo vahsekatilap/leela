@@ -15,6 +15,7 @@ Ghar, the family's Android app (repo `vahsekatilap/ghar`, Supabase project `sfjz
 - Entries logged from Ghar have no `created_by` (Ghar people aren't Leela users); `data.ghar` holds who logged it (`by`, `member`), the room (`room`) and any extra words (`detail`). The app shows `data.ghar.by` wherever it shows who logged an entry (`loggedBy()` / `gharName()` in `src/lib/store.ts`); use those for any new place.
 - Bottles of breast milk from Ghar are saved with `contents: 'breast'` (they were `'breastmilk'` until 21 Nov 2026; migration 0005 fixed the old rows).
 - Who may see or log is decided in Ghar (`leela_access()` there), asked with the person's own Ghar sign-in.
+- Added 21 Nov 2026 (only added, nothing changed): status gives `wake_range`, `pump` and `vitamins` (the bridge now also bundles `alerts.js`); `log` takes `activity` and `vitamin`. Ghar build 3c88c19 shows and uses them.
 
 ## Notifications
 
