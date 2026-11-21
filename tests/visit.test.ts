@@ -24,7 +24,7 @@ for (let d = 15; d <= 21; d++) {
 const b = visitBrief(events, child, Date.parse(at('22', '10:00')), TZ)
 assert.equal(b.lastVisit !== null, true)
 const w = b.changes.find((c) => c.label === 'Weight')!
-assert.match(w.text, /6\.2 kg on 20 Nov, \+600 g in 50 days/)
+assert.match(w.text, /6\.2 kg on 20 Nov, \+600 g in 19 days \(about 221 g a week\)/)
 assert.ok(b.changes.some((c) => c.label === 'Medicines' && /Calpol ×1/.test(c.text)))
 assert.ok(b.suggested.some((s) => /38\.3 °C/.test(s)))
 assert.ok(b.suggested.some((s) => /Vitamin D/.test(s)))
