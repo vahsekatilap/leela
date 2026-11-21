@@ -240,8 +240,11 @@ async function log(client: Row, link: Row, me: Access, body: Row) {
   } else if (body.kind === 'activity') {
     const d = detail.toLowerCase()
     const kind = d.startsWith('massage') ? 'massage' : d.startsWith('bath') ? 'bath' : d.startsWith('tummy') ? 'tummy' : d.startsWith('outing') ? 'outing' : undefined
-    const where = kind === 'outing' ? detail.replace(/^outing:?\s*/i, '').trim() : ''
-    row = { ...base, id, type: 'activity', started_at: at, data: { ...(kind ? { kind } : { label: detail || 'Activity' }), ...(where ? { where } : {}), ghar: { ...ghar } } }
+    // "Outing · Nani's house · went by car": the first part says what, the rest is where and notes.
+    const parts = detail.split(/\s*[·:]\s*/).filter(Boolean)
+    const where = kind === 'outing' ? (parts[1] ?? '') : ''
+    const rest = parts.slice(kind === 'outing' ? 2 : 1).join(' · ')
+    row = { ...base, id, type: 'activity', started_at: at, data: { ...(kind ? { kind } : { label: parts[0] || 'Activity' }), ...(where ? { where } : {}), ghar: { ...ghar, ...(rest ? { detail: rest } : {}) } } }
   } else if (body.kind === 'vitamin') {
     if (!detail) return { ok: false, error: 'which vitamin?' }
     const { data: kid } = await client.from('children').select('settings').eq('id', link.child_id).single()
