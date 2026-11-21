@@ -67,6 +67,8 @@ export interface EventData {
   every_h?: number | null
   // activities & milestones
   label?: string
+  /** Milestones: the development skill this records (src/lib/development.ts). */
+  dev?: string
   /** Outings: where to ("Nani's house", "the market"). */
   where?: string
   // notes: long text lives here, the short `notes` column is for comments on other entries

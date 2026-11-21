@@ -1,5 +1,6 @@
 import clsx from 'clsx'
-import { BookOpenText, CaretDown, ClockCounterClockwise, NotePencil, Star } from '@phosphor-icons/react'
+import { BookOpenText, CaretDown, ClockCounterClockwise, NotePencil, Plant, Star } from '@phosphor-icons/react'
+import { ageMonthsAt, devPlan, skillsDone } from '../lib/development'
 import { TZDate } from '@date-fns/tz'
 import { useMemo, useState } from 'react'
 import { LogSheet } from '../components/LogSheet'
@@ -72,6 +73,8 @@ export function DiaryScreen() {
         </button>
       </div>
 
+      {child.birth_date && <DevCard onOpen={() => set({ overlay: { kind: 'development' } })} events={events} childId={child.id} birth={child.birth_date} />}
+
       <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-card p-1 ring-1 ring-line" role="tablist" aria-label="Diary view">
         {(
           [
@@ -135,6 +138,23 @@ export function DiaryScreen() {
 
       {sheet && <LogSheet key={sheet.edit?.id ?? sheet.type} open onClose={() => setSheet(null)} type={sheet.type} edit={sheet.edit} />}
     </div>
+  )
+}
+
+function DevCard({ onOpen, events, childId, birth }: { onOpen: () => void; events: LeelaEvent[]; childId: string; birth: string }) {
+  const plan = devPlan(skillsDone(events, childId), ageMonthsAt(birth, Date.now()))
+  return (
+    <button type="button" onClick={onOpen} className="mb-5 flex w-full items-center gap-3 rounded-[22px] bg-card px-4 py-3 text-left">
+      <Plant size={26} weight="duotone" className="shrink-0 text-[var(--growth)]" aria-hidden="true" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[16px] font-semibold">Development</span>
+        <span className="block truncate text-[14px] text-ink-2">
+          {plan.now.length ? `${plan.now.length} skills to look for around now` : plan.nextBy ? `Next: what comes by ${plan.nextBy} months` : 'All ticked off'}
+          {plan.done ? ` · ${plan.done} done` : ''}
+        </span>
+      </span>
+      <span aria-hidden="true" className="text-ink-3">›</span>
+    </button>
   )
 }
 

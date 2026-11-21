@@ -46,6 +46,11 @@ export function MoreSheet({
               )
             })}
           </div>
+          {g.title === 'Play and memories' && (
+            <button type="button" onClick={() => { onClose(); useLeela.getState().set({ overlay: { kind: 'development' } }) }} className="mt-2 flex min-h-12 w-full items-center justify-between rounded-2xl bg-card-2 px-4 text-[16px] font-semibold ring-1 ring-line">
+              Development: what to look for now <CaretRight size={18} weight="bold" className="text-ink-3" aria-hidden="true" />
+            </button>
+          )}
           {g.title === 'Feeding' && (
             <button type="button" onClick={() => { onClose(); useLeela.getState().set({ overlay: { kind: 'solids' } }) }} className="mt-2 flex min-h-12 w-full items-center justify-between rounded-2xl bg-card-2 px-4 text-[16px] font-semibold ring-1 ring-line">
               Solids: foods tried, allergens, readiness <CaretRight size={18} weight="bold" className="text-ink-3" aria-hidden="true" />
