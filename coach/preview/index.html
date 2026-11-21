@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0e1120" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LAPdiary" />
+    <meta name="description" content="Your baby’s day, shared by the whole family." />
+    <title>LAPdiary</title>
+    <!-- Dark from the very first frame: never a bright white flash near a sleeping baby. -->
+    <style>html,body{color:#eceae4;background:#0e1120}html[data-theme=day],html[data-theme=day] body{background:#f1f3fa}html[data-theme=night],html[data-theme=night] body{background:#0a0d1d}</style>
+    <script>
+      // Apply the saved theme before the first paint. Dark unless someone chose day or night.
+      try {
+        var t = localStorage.getItem('leela-theme');
+        document.documentElement.dataset.theme = t === 'day' || t === 'night' ? t : 'dark';
+      } catch (e) {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
+    <script type="module" crossorigin src="./assets/index-D-mxqEKO.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/store-v53ZpAsV.js">
+    <link rel="modulepreload" crossorigin href="./assets/ui-CcHvhC5K.js">
+    <link rel="modulepreload" crossorigin href="./assets/Sheet-C5DhHN7B.js">
+    <link rel="modulepreload" crossorigin href="./assets/uuid-B2BVraWC.js">
+    <link rel="modulepreload" crossorigin href="./assets/actions-BNDv1WFH.js">
+    <link rel="modulepreload" crossorigin href="./assets/Baby.es-Dux7i7wy.js">
+    <link rel="modulepreload" crossorigin href="./assets/NotePencil.es-CXGlIeHk.js">
+    <link rel="modulepreload" crossorigin href="./assets/TimeField-BdvIwBMG.js">
+    <link rel="modulepreload" crossorigin href="./assets/Star.es-g2YlmsOz.js">
+    <link rel="modulepreload" crossorigin href="./assets/Icon-D59-31mH.js">
+    <link rel="modulepreload" crossorigin href="./assets/ArrowLeft.es-BnYaYpTy.js">
+    <link rel="modulepreload" crossorigin href="./assets/photos-eF8rtFjQ.js">
+    <link rel="modulepreload" crossorigin href="./assets/PhotoPicker-kgdpGh_8.js">
+    <link rel="modulepreload" crossorigin href="./assets/vaccines-COUw1PC-.js">
+    <link rel="modulepreload" crossorigin href="./assets/alerts-xbxsG-8A.js">
+    <link rel="modulepreload" crossorigin href="./assets/CaretRight.es-B7QxIIT6.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-B9kQFgVV.css">
+  <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
