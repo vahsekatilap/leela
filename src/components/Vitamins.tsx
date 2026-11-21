@@ -3,8 +3,8 @@ import { Check, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { useMemo, useState } from 'react'
 import { deleteEvent, logEvent, saveChildSettings } from '../lib/actions'
 import { loggedBy, useLeela } from '../lib/store'
-import { SUPPLEMENT_PRESETS, SUPPLEMENT_UNITS, doseText, givenToday, readSupplements, sameName, type Supplement } from '../lib/supplements'
-import { fmtTime } from '../lib/time'
+import { SUPPLEMENT_PRESETS, SUPPLEMENT_UNITS, courseText, doseText, givenToday, onCourse, readSupplements, sameName, type Supplement } from '../lib/supplements'
+import { dayKey, fmtTime } from '../lib/time'
 import type { Child, LeelaEvent } from '../lib/types'
 import { uuid } from '../lib/uuid'
 import { VitaminIcon } from './Icon'
@@ -32,7 +32,9 @@ export function VitaminsSheet({
   tz: string
   onOpenEntry: (e: LeelaEvent) => void
 }) {
-  const list = useMemo(() => readSupplements(child.settings), [child.settings])
+  const all = useMemo(() => readSupplements(child.settings), [child.settings])
+  // Only the ones on their course today; a finished course stays on the list (shown in Edit).
+  const list = useMemo(() => all.filter((s) => onCourse(s, dayKey(now, tz))), [all, now, tz])
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<Supplement | null>(null)
   const toast = useLeela((s) => s.toast)
@@ -51,13 +53,13 @@ export function VitaminsSheet({
   }
   const submit = () => {
     if (!form || !form.name.trim()) return
-    const clean: Supplement = { id: form.id, name: form.name.trim(), dose: form.dose?.trim() || undefined, unit: form.unit }
-    save(list.some((s) => s.id === clean.id) ? list.map((s) => (s.id === clean.id ? clean : s)) : [...list, clean])
+    const clean: Supplement = { id: form.id, name: form.name.trim(), dose: form.dose?.trim() || undefined, unit: form.unit, from: form.from, until: form.until }
+    save(all.some((s) => s.id === clean.id) ? all.map((s) => (s.id === clean.id ? clean : s)) : [...all, clean])
     setForm(null)
   }
   const remove = (s: Supplement) => {
-    const before = list
-    save(list.filter((x) => x.id !== s.id))
+    const before = all
+    save(all.filter((x) => x.id !== s.id))
     toast({ text: `${s.name} taken off the list. Entries already logged stay.`, action: { label: 'Undo', run: () => save(before) } })
   }
   const close = () => {
@@ -65,11 +67,11 @@ export function VitaminsSheet({
     setForm(null)
     onClose()
   }
-  const presets = SUPPLEMENT_PRESETS.filter((p) => !list.some((s) => sameName(s.name, p.name)))
+  const presets = SUPPLEMENT_PRESETS.filter((p) => !all.some((s) => sameName(s.name, p.name)))
 
   return (
     <Sheet open={open} onClose={close} title="Vitamins" tone="health">
-      {list.length > 0 && (
+      {all.length > 0 && (
         <>
           <div className="mb-2 flex items-end justify-between">
             <h3 className="text-[15px] font-semibold text-ink-2">Today</h3>
@@ -82,7 +84,7 @@ export function VitaminsSheet({
             </button>
           </div>
           <ul className="mb-3 divide-y divide-line overflow-hidden rounded-2xl bg-card-2 ring-1 ring-line">
-            {list.map((s) => {
+            {(editing ? all : list).map((s) => {
               const e = given(s)
               const dose = doseText(s)
               return (
@@ -105,7 +107,7 @@ export function VitaminsSheet({
                       {dose && <span className="font-normal text-ink-2"> · {dose}</span>}
                     </span>
                     <span className="block text-[13px] text-ink-2">
-                      {editing ? 'Tap to change' : e ? `Given ${fmtTime(e.started_at, tz)} by ${loggedBy(e)}` : 'Not given yet today'}
+                      {editing ? (courseText(s) ? `${courseText(s)} · tap to change` : 'Tap to change') : e ? `Given ${fmtTime(e.started_at, tz)} by ${loggedBy(e)}` : 'Not given yet today'}
                     </span>
                   </button>
                   {editing ? (
@@ -128,7 +130,10 @@ export function VitaminsSheet({
               Give all {left.length} now
             </Button>
           )}
-          {!editing && !left.length && <p className="mb-3 text-center text-[15px] font-semibold text-[var(--health)]">All given today.</p>}
+          {!editing && !left.length && list.length > 0 && <p className="mb-3 text-center text-[15px] font-semibold text-[var(--health)]">All given today.</p>}
+          <button type="button" onClick={() => { close(); useLeela.getState().set({ overlay: { kind: 'tell' } }) }} className="mb-3 min-h-10 text-[15px] font-semibold text-brand">
+            Tell LAPdiary when one started, or until when ›
+          </button>
         </>
       )}
 

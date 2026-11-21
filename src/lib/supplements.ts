@@ -10,6 +10,24 @@ export interface Supplement {
   /** What's given each time, as the family wrote it ("1", "0.5"). */
   dose?: string
   unit?: string
+  /** The course, when the family said: first and last day (YYYY-MM-DD), either may be missing. */
+  from?: string
+  until?: string
+}
+
+const isDay = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)
+
+/** Whether it's on the course on this day (YYYY-MM-DD). */
+export const onCourse = (s: Pick<Supplement, 'from' | 'until'>, day: string) => (!s.from || s.from <= day) && (!s.until || s.until >= day)
+
+/** "Since 21 Jul, until 22 Jul 2027", for the list. */
+export function courseText(s: Pick<Supplement, 'from' | 'until'>): string {
+  const f = (d: string) => {
+    const [y, m, day] = d.split('-').map(Number)
+    const t = new Date(Date.UTC(y, m - 1, day))
+    return t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC', ...(y !== new Date().getFullYear() ? { year: 'numeric' } : {}) })
+  }
+  return [s.from && `since ${f(s.from)}`, s.until && `until ${f(s.until)}`].filter(Boolean).join(', ')
 }
 
 export const SUPPLEMENT_UNITS = ['drops', 'ml', 'mg', 'tablet', 'sachet'] as const
@@ -37,7 +55,7 @@ export function readSupplements(settings: Record<string, unknown> | null | undef
     const name = str(o.name, 40)
     const id = str(o.id, 40)
     if (!name || !id || out.some((s) => s.id === id)) continue
-    out.push({ id, name, dose: str(o.dose, 12), unit: str(o.unit, 12) })
+    out.push({ id, name, dose: str(o.dose, 12), unit: str(o.unit, 12), ...(isDay(o.from) ? { from: o.from } : {}), ...(isDay(o.until) ? { until: o.until } : {}) })
   }
   return out.slice(0, 12)
 }

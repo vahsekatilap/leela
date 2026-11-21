@@ -58,6 +58,10 @@ Development (overlay `development`, `src/lib/development.ts`): the CDC's 2022 mi
 
 Overlay `visit` (`src/screens/VisitScreen.tsx`, `src/lib/visit.ts`), from More › Health and Settings › Care: what changed since the last Doctor visit entry (growth with g a week, sleep/feeds/nappies this week against the week before the visit, temperatures, medicines, symptoms, vaccines due, new foods and skills), questions to ask (suggested from the logs plus their own, in `children.settings.visit.questions`, shared by both parents) with the doctor's answers, Share (phone share sheet or copy), the full report for those dates, and "Visit done" (saves a Doctor visit entry with the questions and answers, then clears the list). Diary and Notes load all history when opened.
 
+## Tell LAPdiary (22 Nov 2026)
+
+Overlay `tell` (`src/screens/TellScreen.tsx`, `src/lib/tell.ts`), from Settings › Records and the Vitamins sheet: a text box with a mic (the phone's speech recognition, en-IN) where the family says what happened in their own words. Ghar's `lap-tell` function (Gemini, with the LAPdiary sign-in) turns it into vitamin/supplement course changes (`from`, `until`, given daily since); nothing changes until Apply. Apply saves the course on `children.settings.supplements` (`from`/`until`, `onCourse()`; vitamins outside their course aren't shown, counted or nudged, here, in `vitaminsLeft` and in the Ghar bridge) and fills in the missing past days at the usual time as one import (undo from Past logs and data). Only vitamins and supplements so far; other kinds of facts can be added to `lap-tell` and `applyChange` later.
+
 ## Vaccines
 
 Leela's three earlier Vaccine entries (1 Sep, 30 Sep, 30 Oct 2026) were linked to the 6, 10 and 14-week doses on 21 Nov 2026, and the birth doses marked as given before.

@@ -1,4 +1,4 @@
-import { ArrowLeft, Baby, Bell, BookOpenText, CaretRight, ClockCounterClockwise, Copy, Crown, Drop, DownloadSimple, FileArrowUp, FileText, Folders, Moon, PencilSimple, Plant, Plus, ShareNetwork, ShieldStar, Stethoscope, Syringe, UserCircle, UsersThree, X, Carrot } from '@phosphor-icons/react'
+import { ArrowLeft, Baby, Bell, BookOpenText, CaretRight, ClockCounterClockwise, Copy, Crown, Drop, DownloadSimple, FileArrowUp, FileText, Folders, Microphone, Moon, PencilSimple, Plant, Plus, ShareNetwork, ShieldStar, Stethoscope, Syringe, UserCircle, UsersThree, X, Carrot } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { ActivitySheet } from '../components/ActivitySheet'
 import { AlertSettings } from '../components/AlertSettings'
@@ -49,7 +49,7 @@ export function FamilyScreen() {
     setPage(p)
     window.scrollTo({ top: 0 })
   }
-  const overlay = (kind: 'vaccines' | 'development' | 'solids' | 'pumping' | 'report' | 'book' | 'admin' | 'visit') => useLeela.getState().set({ overlay: { kind } })
+  const overlay = (kind: 'vaccines' | 'development' | 'solids' | 'pumping' | 'report' | 'book' | 'admin' | 'visit' | 'tell') => useLeela.getState().set({ overlay: { kind } })
 
   const download = async (kind: 'json' | 'csv') => {
     setExporting(true)
@@ -147,6 +147,7 @@ export function FamilyScreen() {
           <Rows
             title="Records"
             rows={[
+              { icon: <Microphone size={24} weight="duotone" />, label: 'Tell LAPdiary', sub: 'Say what happened: past vitamins, courses, dates', onClick: () => overlay('tell') },
               { icon: <FileText size={24} weight="duotone" />, label: 'Doctor report', sub: 'Any dates, ready to save as a PDF', onClick: () => overlay('report') },
               { icon: <BookOpenText size={24} weight="duotone" />, label: 'Diary book', sub: 'Month by month, to print or keep', onClick: () => overlay('book') },
               { icon: <Folders size={24} weight="duotone" />, label: 'Past logs and your data', sub: 'Import, download, activity, words learned', onClick: () => go('data') },

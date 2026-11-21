@@ -374,7 +374,11 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 export function vitaminsLeft(settings: unknown, events: Ev[], childId: string, from: number, to: number): string[] {
   const list = (settings as { supplements?: unknown } | null)?.supplements
   if (!Array.isArray(list)) return []
-  const names = list.map((x) => (x && typeof x === 'object' && typeof (x as { name?: unknown }).name === 'string' ? (x as { name: string }).name.trim() : '')).filter(Boolean)
+  // Only those on their course that day (from / until, when the family set them).
+  const day = new Date(from + 12 * 3_600_000).toISOString().slice(0, 10)
+  const names = list
+    .filter((x) => x && typeof x === 'object' && (typeof x.from !== 'string' || x.from <= day) && (typeof x.until !== 'string' || x.until >= day))
+    .map((x) => (x && typeof x === 'object' && typeof (x as { name?: unknown }).name === 'string' ? (x as { name: string }).name.trim() : '')).filter(Boolean)
   const given = new Set(
     events
       .filter((e) => !e.deleted_at && e.type === 'medicine' && e.child_id === childId && Date.parse(e.started_at) >= from && Date.parse(e.started_at) < to)

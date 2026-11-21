@@ -18,12 +18,12 @@ import { showsFor } from '../lib/config'
 import { lastOf, sleepState, totalsFor } from '../lib/counting'
 import { eventDetail, eventTitle } from '../lib/describe'
 import { phase, sweetSpot } from '../lib/sweetspot'
-import { givenToday, readSupplements, vitaminsSub } from '../lib/supplements'
+import { givenToday, onCourse, readSupplements, vitaminsSub } from '../lib/supplements'
 import { pumpDue } from '../lib/alerts'
 import { ACTIVITY_KINDS } from '../lib/config'
 import { activityKind, habits, notYet } from '../lib/routine'
 import { activeChild, loggedBy, myPrefs, useLeela } from '../lib/store'
-import { ageText, agoText, dayStart, durationText, fmtTime } from '../lib/time'
+import { ageText, agoText, dayKey, dayStart, durationText, fmtTime } from '../lib/time'
 import type { EventData, EventType, LeelaEvent } from '../lib/types'
 import { FEVER_C, fmtTemp } from '../lib/units'
 
@@ -154,7 +154,7 @@ export function TodayScreen() {
       : totals.pumpMl
         ? `${totals.pumpMl} ml today`
         : 'Start now'
-  const vitamins = readSupplements(child.settings)
+  const vitamins = readSupplements(child.settings).filter((s) => onCourse(s, dayKey(now, tz)))
   const vitaminsLeft = vitamins.filter((s) => !givenToday(events, child.id, s, now, tz)).length
 
   const tiles: { id: string; label: string; sub: string; tone: string; icon: React.ReactNode; onClick: () => void; active?: boolean; done?: boolean }[] = [

@@ -213,7 +213,11 @@ async function status(client: Row, link: Row, days: number) {
   } catch (err) {
     console.error('nudges', err)
   }
-  const supplements = Array.isArray(child?.settings?.supplements) ? (child.settings.supplements as Row[]).map((x) => String(x?.name ?? '')).filter(Boolean) : []
+  // Only those on their course today (from / until, when the family set them).
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(now)
+  const supplements = Array.isArray(child?.settings?.supplements)
+    ? (child.settings.supplements as Row[]).filter((x) => (typeof x?.from !== 'string' || x.from <= today) && (typeof x?.until !== 'string' || x.until >= today)).map((x) => String(x?.name ?? '')).filter(Boolean)
+    : []
   const dayStart = localMidnight(now, tz)
   return {
     child: { name: child?.name ?? 'Baby', born: child?.birth_date ?? null },

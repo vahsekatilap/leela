@@ -1,7 +1,7 @@
 // Run with: npx tsx tests/stash.test.ts
 // The milk stash, the 24-hour pumping plan, today's goal and routines.
 import assert from 'node:assert/strict'
-import { pumpPlan, readAlerts, stashText } from '../src/lib/alerts'
+import { pumpPlan, readAlerts, stashText, vitaminsLeft } from '../src/lib/alerts'
 import { pumpTarget, sitting, sittingPrompt } from '../src/lib/pumping'
 import { habits, late, notYet } from '../src/lib/routine'
 import { milkStash, stashExpiring } from '../src/lib/stash'
@@ -145,6 +145,15 @@ const ev = (type: string, start: number, end: number | null, data: Record<string
   assert.equal(vitaminsNudge('Leela', ['Vitamin D'], [], 'x')?.important, undefined)
   assert.equal(vitaminsNudge('Leela', ['Vitamin D'], ['Vitamin D'], 'x')?.title, 'Important: Vitamin D')
   assert.equal(vitaminsNudge('Leela', [], ['Vitamin D'], 'x'), null)
+}
+
+// ---------------------------------------------------------------- vitamin courses
+{
+  const settings = { supplements: [{ id: 'd', name: 'Vitamin D', from: '2026-07-21', until: '2027-07-21' }, { id: 'i', name: 'Iron', from: '2026-11-15', until: '2026-12-14' }] }
+  const midnight = (d: string) => Date.parse(`${d}T00:00:00+05:30`)
+  assert.deepEqual(vitaminsLeft(settings, [], 'c', midnight('2026-12-01'), midnight('2026-12-01') + 3_600_000), ['Vitamin D', 'Iron'])
+  assert.deepEqual(vitaminsLeft(settings, [], 'c', midnight('2026-12-15'), midnight('2026-12-15') + 3_600_000), ['Vitamin D'])
+  assert.deepEqual(vitaminsLeft(settings, [], 'c', midnight('2026-11-10'), midnight('2026-11-10') + 3_600_000), ['Vitamin D'])
 }
 
 assert.equal(readAlerts({}).stash, true)
