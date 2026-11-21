@@ -132,7 +132,7 @@ export function VitaminsSheet({
           )}
           {!editing && !left.length && list.length > 0 && <p className="mb-3 text-center text-[15px] font-semibold text-[var(--health)]">All given today.</p>}
           <button type="button" onClick={() => { close(); useLeela.getState().set({ overlay: { kind: 'tell' } }) }} className="mb-3 min-h-10 text-[15px] font-semibold text-brand">
-            Tell LAPdiary when one started, or until when ›
+            When one started, or until when: add by voice or text ›
           </button>
         </>
       )}

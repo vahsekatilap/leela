@@ -1,5 +1,6 @@
 import { ArrowLeft, Baby, Bell, BookOpenText, CaretRight, ClockCounterClockwise, Copy, Crown, Drop, DownloadSimple, FileArrowUp, FileText, Folders, Microphone, Moon, PencilSimple, Plant, Plus, ShareNetwork, ShieldStar, Stethoscope, Syringe, UserCircle, UsersThree, X, Carrot } from '@phosphor-icons/react'
 import { useState } from 'react'
+import { AddRecords } from '../components/AddRecords'
 import { ActivitySheet } from '../components/ActivitySheet'
 import { AlertSettings } from '../components/AlertSettings'
 import { ChildSheet } from '../components/ChildSheet'
@@ -147,7 +148,7 @@ export function FamilyScreen() {
           <Rows
             title="Records"
             rows={[
-              { icon: <Microphone size={24} weight="duotone" />, label: 'Tell LAPdiary', sub: 'Say what happened: past vitamins, courses, dates', onClick: () => overlay('tell') },
+              { icon: <Microphone size={24} weight="duotone" />, label: 'Add records · voice or text', sub: 'Say what happened, in your own words', onClick: () => overlay('tell') },
               { icon: <FileText size={24} weight="duotone" />, label: 'Doctor report', sub: 'Any dates, ready to save as a PDF', onClick: () => overlay('report') },
               { icon: <BookOpenText size={24} weight="duotone" />, label: 'Diary book', sub: 'Month by month, to print or keep', onClick: () => overlay('book') },
               { icon: <Folders size={24} weight="duotone" />, label: 'Past logs and your data', sub: 'Import, download, activity, words learned', onClick: () => go('data') },
@@ -349,6 +350,10 @@ export function FamilyScreen() {
 
       {page === 'data' && (
         <>
+      <Section title="Add records · voice or text">
+        <AddRecords compact />
+      </Section>
+
       <Section title="Past logs">
         <p className="mb-3 text-[15px] text-ink-2">Bring in what you wrote before LAPdiary, from a PDF, Word file, Google Doc, spreadsheet or WhatsApp chat. You check everything before it’s saved, and any import can be undone.</p>
         <Button variant="secondary" size="md" className="w-full" onClick={() => useLeela.getState().set({ overlay: { kind: 'import' } })}>
