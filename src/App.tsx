@@ -70,6 +70,7 @@ export function App() {
     if (!ready) return
     const go = (what: unknown) => {
       if (what === 'vaccines') useLeela.getState().set({ tab: 'today', overlay: { kind: 'vaccines' } })
+      else if (what === 'pumping') useLeela.getState().set({ tab: 'today', overlay: { kind: 'pumping' } })
       else if (what === 'today') useLeela.getState().set({ tab: 'today' })
     }
     const url = new URL(window.location.href)

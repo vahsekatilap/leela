@@ -12,6 +12,8 @@ import {
   TYPES,
 } from '../lib/config'
 import { DOSE_GAPS, pumpDue } from '../lib/alerts'
+import { milkStash } from '../lib/stash'
+import { activityKind, habits } from '../lib/routine'
 import { eventTitle } from '../lib/describe'
 import { activeChild, myPrefs, useLeela } from '../lib/store'
 import { durationText, fmtTime } from '../lib/time'
@@ -181,6 +183,12 @@ export function LogSheet({
   const len = usualLength(type, last)
   const setOngoing = (v: boolean) => setDraft((d) => ({ ...d, ongoing: v, end: v ? d.end : (d.end ?? Date.now()) }))
   const earliest = meta.familyLevel || type === 'note' || type === 'contraction' ? null : birthStart(child?.birth_date, tz)
+
+  // Activities: a tick on the ones done today, and a word on the usual ones not done yet.
+  const acts = type === 'activity' && childId ? habits(Object.values(events), childId, (e) => (e.type === 'activity' ? activityKind(e, ACT_LABELS) : null), now, tz) : []
+  const activityOptions = ACTIVITY_KINDS.map((k) => ({ id: k.id, label: acts.find((h) => h.key === k.id)?.doneToday ? `${k.label} ✓` : k.label }))
+  const usualLeft = acts.filter((h) => h.days >= 4 && !h.doneToday && ACT_LABELS[h.key])
+  const activityHint = usualLeft.length ? `Most days, not yet today: ${usualLeft.map((h) => ACT_LABELS[h.key].toLowerCase()).join(', ')}.` : null
 
   // ---------------------------------------------------------------- problems that stop saving
   let issue: string | null = null
@@ -502,6 +510,7 @@ export function LogSheet({
               tone="feed"
             />
           </Field>
+          {draft.data.contents === 'breast' && <StashFrom value={draft.data.stash} onChange={(v) => setData({ stash: v })} events={Object.values(events)} />}
           {!edit && !running && (
             <>
               <Button tone="feed" className="mb-3 w-full" onClick={() => void startNow()}>
@@ -545,6 +554,19 @@ export function LogSheet({
           </Field>
           <Field label="Right">
             <Stepper value={draft.data.right_ml} onChange={(v) => setData({ right_ml: v })} step={10} unit="ml" label="right amount" />
+          </Field>
+          <Field label="Where the milk went">
+            <Choices
+              options={[
+                { id: 'fed', label: 'Fed' },
+                { id: 'fridge', label: 'Fridge' },
+                { id: 'freezer', label: 'Freezer' },
+              ]}
+              value={draft.data.stash as 'fed' | undefined}
+              onChange={(v) => setData({ stash: v })}
+              tone="pump"
+              allowNone
+            />
           </Field>
         </>
       )}
@@ -731,8 +753,9 @@ export function LogSheet({
       {type === 'activity' && (
         <>
           <Field label="Activity">
-            <Choices options={ACTIVITY_KINDS} value={draft.data.kind as 'tummy' | undefined} onChange={(v) => setData({ kind: v })} tone="activity" columns={2} />
+            <Choices options={activityOptions} value={draft.data.kind as 'tummy' | undefined} onChange={(v) => setData({ kind: v })} tone="activity" columns={2} />
           </Field>
+          {!edit && activityHint && <p className="-mt-3 mb-4 text-[14px] text-ink-2">{activityHint}</p>}
           {draft.data.kind === 'outing' && <OutingFields where={draft.data.where ?? ''} onChange={(w) => setData({ where: w })} events={Object.values(events)} childId={childId} />}
           {!edit && !running && (
             <>
@@ -932,6 +955,31 @@ function PumpHint({ events, tz }: { events: LeelaEvent[]; tz: string }) {
 }
 
 /** Where an outing went, with the family's own places one tap away. */
+const ACT_LABELS: Record<string, string> = Object.fromEntries(ACTIVITY_KINDS.map((k) => [k.id, k.label]))
+
+/** A breast-milk bottle: fresh, or from the fridge or freezer stash. */
+function StashFrom({ value, onChange, events }: { value: EventData['stash']; onChange: (v: EventData['stash']) => void; events: LeelaEvent[] }) {
+  const stash = useMemo(() => milkStash(events as never, Date.now()), [events])
+  if (!stash.fridgeMl && !stash.freezerMl && (value === undefined || value === 'fresh')) return null
+  return (
+    <Field label="From">
+      <Choices
+        options={[
+          { id: 'fresh', label: 'Fresh' },
+          { id: 'fridge', label: `Fridge${stash.fridgeMl ? ` (${stash.fridgeMl})` : ''}` },
+          { id: 'freezer', label: `Freezer${stash.freezerMl ? ` (${stash.freezerMl})` : ''}` },
+        ]}
+        value={value === 'fed' ? undefined : (value as 'fresh' | undefined)}
+        onChange={(v) => onChange(v)}
+        tone="feed"
+        allowNone
+        compact
+      />
+      {value === undefined && <p className="mt-1.5 text-[13px] text-ink-2">Not chosen: it’s taken from the fridge milk first, oldest first.</p>}
+    </Field>
+  )
+}
+
 function OutingFields({ where, onChange, events, childId }: { where: string; onChange: (w: string) => void; events: LeelaEvent[]; childId: string | null }) {
   const places = useMemo(() => {
     const n = new Map<string, number>()

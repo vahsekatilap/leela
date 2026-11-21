@@ -1,9 +1,19 @@
 // Notifications besides the sweet spot: medicine doses, vaccines and the evening summary.
 // No libraries, so supabase/functions/sweetspot-push can use the same code: `npm run build:edge`
 // bundles this file (and vaccines.ts) into sweetspot-push/alerts.js.
+import { milkStash, stashExpiring, type Lot } from './stash'
 import { localDay, vaccinePlan, vaccineReminder } from './vaccines'
 
-export { localDay, vaccinePlan, vaccineReminder }
+export { localDay, milkStash, stashExpiring, vaccinePlan, vaccineReminder }
+
+/** "Use the fridge milk": pumped milk nearing its 4 days in the fridge. */
+export function stashText(lot: Lot, tz: string): { title: string; body: string } {
+  const day = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tz }).format(lot.at)
+  return {
+    title: `Use the fridge milk by ${clockText(lot.useBy, tz)}`,
+    body: `${Math.round(lot.left)} ml pumped ${day} ${clockText(lot.at, tz)} reaches 4 days in the fridge then. Give it first, or put it in the freezer.`,
+  }
+}
 
 const H = 3_600_000
 
@@ -25,15 +35,17 @@ export interface AlertPrefs {
   vitamins: boolean
   /** Sunday evening: how the week went, against the week before. */
   weekly: boolean
+  /** When pumped milk in the fridge is close to its 4 days. */
+  stash: boolean
 }
 
-export const DEFAULT_ALERTS: AlertPrefs = { sweetspot: true, medicine: true, vaccines: true, summary: true, summaryAt: '20:30', pump: false, vitamins: true, weekly: true }
+export const DEFAULT_ALERTS: AlertPrefs = { sweetspot: true, medicine: true, vaccines: true, summary: true, summaryAt: '20:30', pump: false, vitamins: true, weekly: true, stash: true }
 
 export function readAlerts(prefs: object | null | undefined): AlertPrefs {
   const a = ((prefs as { alerts?: unknown } | null | undefined)?.alerts ?? {}) as Record<string, unknown>
   const flag = (k: keyof AlertPrefs) => (typeof a[k] === 'boolean' ? (a[k] as boolean) : (DEFAULT_ALERTS[k] as boolean))
   const at = typeof a.summaryAt === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(a.summaryAt) ? a.summaryAt : DEFAULT_ALERTS.summaryAt
-  return { sweetspot: flag('sweetspot'), medicine: flag('medicine'), vaccines: flag('vaccines'), summary: flag('summary'), summaryAt: at, pump: flag('pump'), vitamins: flag('vitamins'), weekly: flag('weekly') }
+  return { sweetspot: flag('sweetspot'), medicine: flag('medicine'), vaccines: flag('vaccines'), summary: flag('summary'), summaryAt: at, pump: flag('pump'), vitamins: flag('vitamins'), weekly: flag('weekly'), stash: flag('stash') }
 }
 
 /** Hours between doses that a medicine reminder can be set to. */
@@ -119,8 +131,8 @@ function endOf(e: Ev): number {
   return Date.parse(e.started_at) + secs * 1000
 }
 
-function forSide(all: Ev[], side: Breast, now: number, timeZone: string): Omit<PumpDue, 'other'> | null {
-  // Emptyings of this breast; a breastfeed and a pumping within 45 minutes are one.
+/** Emptyings of one breast (a breastfeed and a pumping within 45 minutes are one), and its usual gap at any time of day. */
+function sideModel(all: Ev[], side: Breast, now: number, timeZone: string) {
   const sessions: { start: number; end: number; kind: 'nursing' | 'pump' }[] = []
   for (const e of all) {
     if (!sidesOf(e).includes(side)) continue
@@ -131,25 +143,28 @@ function forSide(all: Ev[], side: Breast, now: number, timeZone: string): Omit<P
       if (end >= last.end) Object.assign(last, { end, kind: e.type })
     } else sessions.push({ start, end, kind: e.type as 'nursing' | 'pump' })
   }
-  const last = sessions[sessions.length - 1]
-  if (!last || last.end < now - 2 * 24 * H) return null
-  const t0 = localMinute(last.end, timeZone)
-  const xs: { v: number; w: number }[] = []
+  const gaps: { v: number; at: number; ago: number }[] = []
   for (let i = 0; i + 1 < sessions.length; i++) {
     const gap = (sessions[i + 1].start - sessions[i].end) / MIN
     if (gap < 40 || gap > 10 * 60) continue
-    let d = Math.abs(localMinute(sessions[i].end, timeZone) - t0)
-    d = Math.min(d, 1440 - d)
-    // Gaps that began near this time of day, and recent days, count most.
-    const w = Math.exp(-((d / 120) ** 2) / 2) * Math.pow(0.5, (now - sessions[i].end) / (3 * 24 * H))
-    if (w > 0.01) xs.push({ v: gap, w })
+    gaps.push({ v: gap, at: localMinute(sessions[i].end, timeZone), ago: now - sessions[i].end })
   }
-  const weight = xs.reduce((t, x) => t + x.w, 0)
-  let every = 180
-  let basis: PumpDue['basis'] = 'default'
-  if (xs.length >= 3 && weight > 0.5) {
+  /** Usual minutes until the next emptying, for one that ended at `t`. */
+  const gapAt = (t: number): { every: number; basis: PumpDue['basis'] } => {
+    const t0 = localMinute(t, timeZone)
+    const xs: { v: number; w: number }[] = []
+    for (const g of gaps) {
+      let d = Math.abs(g.at - t0)
+      d = Math.min(d, 1440 - d)
+      // Gaps that began near this time of day, and recent days, count most.
+      const w = Math.exp(-((d / 120) ** 2) / 2) * Math.pow(0.5, g.ago / (3 * 24 * H))
+      if (w > 0.01) xs.push({ v: g.v, w })
+    }
+    const weight = xs.reduce((a, x) => a + x.w, 0)
+    if (xs.length < 3 || weight <= 0.5) return { every: 180, basis: 'default' }
     xs.sort((a, b) => a.v - b.v)
     let acc = 0
+    let every = 180
     for (const x of xs) {
       acc += x.w
       if (acc >= weight / 2) {
@@ -157,23 +172,60 @@ function forSide(all: Ev[], side: Breast, now: number, timeZone: string): Omit<P
         break
       }
     }
-    every = Math.min(8 * 60, Math.max(90, Math.round(every / 5) * 5))
-    basis = 'logs'
+    return { every: Math.min(8 * 60, Math.max(90, Math.round(every / 5) * 5)), basis: 'logs' }
   }
-  return { side, lastAt: last.end, lastKind: last.kind, everyMin: every, dueAt: last.end + every * MIN, basis }
+  return { last: sessions[sessions.length - 1], gapAt }
 }
 
-/**
- * When to pump next, breast by breast: from when each was last emptied (by a breastfeed or by
- * pumping, whichever was later) plus the mother's own usual gap for it at that time of day,
- * learned from the last week. Null while feeding or pumping, or with nothing logged lately.
- */
-export function pumpDue(events: Ev[], now: number, timeZone: string): PumpDue | null {
+function forSide(all: Ev[], side: Breast, now: number, timeZone: string): Omit<PumpDue, 'other'> | null {
+  const m = sideModel(all, side, now, timeZone)
+  const last = m.last
+  if (!last || last.end < now - 2 * 24 * H) return null
+  const g = m.gapAt(last.end)
+  return { side, lastAt: last.end, lastKind: last.kind, everyMin: g.every, dueAt: last.end + g.every * MIN, basis: g.basis }
+}
+
+function emptyingInputs(events: Ev[], now: number) {
   const all = events
     .filter((e) => !e.deleted_at && (e.type === 'nursing' || e.type === 'pump') && Date.parse(e.started_at) <= now && Date.parse(e.started_at) > now - 8 * 24 * H)
     .sort((a, b) => a.started_at.localeCompare(b.started_at))
-  if (all.some((e) => e.timer_state && Date.parse(e.started_at) > now - 3 * H)) return null
-  const done = all.filter((e) => !e.timer_state)
+  return { running: all.some((e) => e.timer_state && Date.parse(e.started_at) > now - 3 * H), done: all.filter((e) => !e.timer_state) }
+}
+
+export interface PlanStep {
+  side: Breast | 'both'
+  at: number
+}
+
+/**
+ * The next day of emptyings, if each comes when it's due: the "sweet spot" of pumping across 24
+ * hours. Sides due within 20 minutes of each other become one sitting.
+ */
+export function pumpPlan(events: Ev[], now: number, timeZone: string, hours = 24): PlanStep[] {
+  const { done } = emptyingInputs(events, now)
+  const models = { left: sideModel(done, 'left', now, timeZone), right: sideModel(done, 'right', now, timeZone) }
+  const last: Record<Breast, number | null> = {
+    left: models.left.last && models.left.last.end > now - 2 * 24 * H ? models.left.last.end : null,
+    right: models.right.last && models.right.last.end > now - 2 * 24 * H ? models.right.last.end : null,
+  }
+  const sides = (['left', 'right'] as const).filter((x) => last[x] !== null)
+  const out: PlanStep[] = []
+  const until = now + hours * H
+  for (let i = 0; i < 24 && sides.length; i++) {
+    const due = sides.map((x) => ({ x, at: Math.max(now, last[x]! + models[x].gapAt(last[x]!).every * MIN) })).sort((a, b) => a.at - b.at)
+    const first = due[0]
+    if (first.at > until) break
+    const together = due.length === 2 && due[1].at - first.at <= 20 * MIN
+    out.push({ side: together ? 'both' : first.x, at: first.at })
+    // Assume it's done then (taking 20 minutes) and carry on from there.
+    for (const d of together ? due : [first]) last[d.x] = first.at + 20 * MIN
+  }
+  return out
+}
+
+export function pumpDue(events: Ev[], now: number, timeZone: string): PumpDue | null {
+  const { running, done } = emptyingInputs(events, now)
+  if (running) return null
   const l = forSide(done, 'left', now, timeZone)
   const r = forSide(done, 'right', now, timeZone)
   if (!l || !r) return l ?? r

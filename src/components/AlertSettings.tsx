@@ -102,6 +102,7 @@ export function AlertSettings() {
           <Toggle label="Vitamins not given by 7 pm" checked={a.vitamins} onChange={(v) => void saveAlerts({ vitamins: v })} tone="health" />
           <Toggle label="How the week went (Sunday morning)" checked={a.weekly} onChange={(v) => void saveAlerts({ weekly: v })} />
           <Toggle label="Time to pump" checked={a.pump} onChange={(v) => void saveAlerts({ pump: v })} tone="pump" />
+          <Toggle label="Fridge milk close to 4 days" checked={a.stash} onChange={(v) => void saveAlerts({ stash: v })} tone="pump" />
           <Toggle label="Evening summary of the day" checked={a.summary} onChange={(v) => void saveAlerts({ summary: v })} />
           {a.summary && (
             <div>

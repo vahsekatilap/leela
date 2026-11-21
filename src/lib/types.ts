@@ -36,6 +36,10 @@ export interface EventData {
   left_ml?: number
   right_ml?: number
   total_ml?: number
+  /** Pumping: where the milk went (fridge or freezer puts it in the stash). Bottle: where it came from. */
+  stash?: 'fridge' | 'freezer' | 'fed' | 'fresh'
+  /** Pumping: the stored milk was used up or thrown away at this time. */
+  stash_gone_at?: string
   // solids
   foods?: { name: string; first?: boolean; allergen?: boolean }[]
   eaten?: 'taste' | 'some' | 'most' | 'all'

@@ -221,3 +221,81 @@ const clock = (minute: number) => {
   return `${((h + 11) % 12) + 1}:${String(m % 60).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
 }
 
+
+// ------------------------------------------------------------------------- today's goal
+export interface Target {
+  /** Pumped so far today. */
+  today: number
+  /** Her own usual day lately (average of the last 7 days with pumping, to the nearest 10 ml). */
+  target: number
+  /** What she has usually pumped by this time of day, on those days. */
+  byNow: number
+  /** Days in a row (to yesterday, and today once reached) at 90% or more of her usual then. */
+  streak: number
+  hitToday: boolean
+  /** Her best day in the last 4 weeks. */
+  best: { day: number; ml: number } | null
+}
+
+const DAY_BREAK = (startOfDay: (t: number) => number, day: number) => startOfDay(day + 36 * H)
+
+export function pumpTarget(events: Ev[], now: number, tz: string, startOfDay: (t: number) => number): Target | null {
+  const sessions = sideSessions(events.filter((e) => Date.parse(e.started_at) > now - 40 * DAY && Date.parse(e.started_at) <= now))
+  const today = startOfDay(now)
+  const days: { day: number; ml: number; byMinute: { m: number; ml: number }[] }[] = []
+  for (let i = 35; i >= 0; i--) {
+    const day = startOfDay(today - i * DAY + 12 * H)
+    const next = DAY_BREAK(startOfDay, day)
+    const xs = sessions.filter((s) => s.at >= day && s.at < next)
+    days.push({ day, ml: xs.reduce((t, s) => t + s.ml, 0), byMinute: xs.map((s) => ({ m: localMinute(s.at, tz), ml: s.ml })) })
+  }
+  const cur = days[days.length - 1]
+  const usualBefore = (i: number) => {
+    const xs = days.slice(Math.max(0, i - 7), i).filter((d) => d.ml > 0)
+    return xs.length >= 3 ? avg(xs.map((d) => d.ml)) : null
+  }
+  const usual = usualBefore(days.length - 1)
+  if (usual === null) return null
+  const target = Math.max(10, Math.round(usual / 10) * 10)
+  // How far through a usual day she is by now.
+  const nowMin = localMinute(now, tz)
+  const recent = days.slice(-8, -1).filter((d) => d.ml > 0)
+  const frac = avg(recent.map((d) => d.byMinute.filter((x) => x.m <= nowMin).reduce((t, x) => t + x.ml, 0) / d.ml))
+  let streak = 0
+  for (let i = days.length - 2; i >= 0; i--) {
+    const u = usualBefore(i)
+    if (u === null || days[i].ml < u * 0.9) break
+    streak++
+  }
+  const hitToday = cur.ml >= target * 0.9
+  if (hitToday) streak++
+  const pool = days.slice(-29, -1).filter((d) => d.ml > 0)
+  const best = pool.length ? pool.reduce((a, b) => (b.ml > a.ml ? b : a)) : null
+  return { today: cur.ml, target, byNow: Math.round((target * frac) / 5) * 5, streak, hitToday, best: best && { day: best.day, ml: best.ml } }
+}
+
+// ------------------------------------------------------------------------- one sitting
+export interface Sitting {
+  /** Her usual minutes for a sitting, at least the 15 most mothers need to empty well. */
+  minutes: number
+  /** Her own typical length, if known. */
+  usualMin: number | null
+}
+
+export function sitting(events: Ev[], now: number): Sitting {
+  const xs = events
+    .filter((e) => !e.deleted_at && !e.timer_state && e.type === 'pump' && e.ended_at && Date.parse(e.started_at) > now - 14 * DAY)
+    .map((e) => (Date.parse(e.ended_at!) - Date.parse(e.started_at)) / MIN)
+    .filter((m) => m >= 3 && m <= 60)
+  const usual = xs.length >= 3 ? Math.round(median(xs)) : null
+  return { minutes: Math.min(30, Math.max(15, usual ?? 15)), usualMin: usual }
+}
+
+/** What to say while pumping, from minutes in and the sitting's length. */
+export function sittingPrompt(min: number, s: Sitting): string {
+  if (min < 2) return 'Relax your shoulders and breathe out slowly. A look at a photo of your baby helps the milk let down.'
+  if (min < 5) return 'Once the milk flows, turn the speed down and the suction up to what’s comfortable, never painful.'
+  if (min < s.minutes * 0.6) return 'Gentle breast massage now and then moves more milk. A second let-down often comes if you keep going.'
+  if (min < s.minutes) return 'Keep going 2–3 minutes after the last drops: a fuller emptying tells your body to make more.'
+  return `That’s your ${s.minutes} minutes. Stop once the flow has stopped for 2 minutes.`
+}

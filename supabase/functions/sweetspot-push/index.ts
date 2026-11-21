@@ -11,7 +11,7 @@
 // (action "test"). Deploy with verify_jwt = false: this function checks the secret or the user.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { sweetSpot } from './sweetspot.js'
-import { clockText, dayCounts, localDay, localMidnight, localMinute, medicinesDue, pumpDue, expectedMl, hoursText, vitaminsLeft, vitaminText, weekText, readAlerts, summaryText, vaccinePlan, vaccineReminder } from './alerts.js'
+import { clockText, dayCounts, stashExpiring, stashText, localDay, localMidnight, localMinute, medicinesDue, pumpDue, expectedMl, hoursText, vitaminsLeft, vitaminText, weekText, readAlerts, summaryText, vaccinePlan, vaccineReminder } from './alerts.js'
 import { sendPush, type Vapid } from './webpush.ts'
 
 const DAY = 86_400_000
@@ -210,14 +210,15 @@ async function others(admin: Db, vapid: Vapid, now: number, subs: Sub[], member:
       .eq('data->>kind', 'vaccine')
       .is('deleted_at', null)
       .limit(2000),
-    // A week of breastfeeds and pumping, for "time to pump" (pumping belongs to the family, not a baby).
+    // Two weeks of breastfeeds, pumping and bottles, for "time to pump" and the fridge milk
+    // (pumping belongs to the family, not a baby).
     admin
       .from('events')
       .select('id, family_id, child_id, type, started_at, ended_at, timer_state, data, deleted_at')
       .in('family_id', familyIds)
-      .in('type', ['nursing', 'pump'])
+      .in('type', ['nursing', 'pump', 'bottle'])
       .is('deleted_at', null)
-      .gte('started_at', new Date(now - 8 * DAY).toISOString())
+      .gte('started_at', new Date(now - 14 * DAY).toISOString())
       .order('started_at')
       .limit(5000),
   ])
@@ -244,8 +245,20 @@ async function others(admin: Db, vapid: Vapid, now: number, subs: Sub[], member:
         title: p.other ? `Time to pump: ${p.side} side` : 'Time to pump',
         body: `${p.other ? `${p.side === 'left' ? 'Left' : 'Right'} side last` : 'Last'} emptied ${clockText(p.lastAt, tz)} (${p.lastKind === 'pump' ? 'pumping' : 'breastfeed'}), ${hoursText(now - p.lastAt)} ago.${ml ? ` This time usually gives about ${ml} ml.` : ''}`,
         tag: `pump-${fam.id}`,
-        open: 'today',
+        open: 'pumping',
       })
+    }
+  }
+
+  // Fridge milk: once per bottle, from 12 hours before it reaches 4 days (not at night).
+  for (const fam of families) {
+    const kid = kids.find((k) => k.family_id === fam.id)
+    const tz = fam.timezone || 'UTC'
+    const hour = Math.floor(localMinute(now, tz) / 60)
+    const phones = subs.filter((s) => s.family_id === fam.id && member.has(`${s.family_id}/${s.user_id}`) && want(s).stash)
+    if (!kid || !phones.length || hour < 8 || hour >= 22) continue
+    for (const lot of stashExpiring(((emptying ?? []) as Row[]).filter((e) => e.family_id === fam.id) as never, now)) {
+      for (const sub of phones) await send(sub, kid, `stash/${lot.id}`, { ...stashText(lot, tz), tag: `stash-${fam.id}`, open: 'pumping' })
     }
   }
 

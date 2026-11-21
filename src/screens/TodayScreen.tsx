@@ -19,6 +19,8 @@ import { eventDetail, eventTitle } from '../lib/describe'
 import { phase, sweetSpot } from '../lib/sweetspot'
 import { givenToday, readSupplements, vitaminsSub } from '../lib/supplements'
 import { pumpDue } from '../lib/alerts'
+import { ACTIVITY_KINDS } from '../lib/config'
+import { activityKind, habits, notYet } from '../lib/routine'
 import { activeChild, loggedBy, myPrefs, useLeela } from '../lib/store'
 import { ageText, agoText, dayStart, durationText, fmtTime } from '../lib/time'
 import type { EventData, EventType, LeelaEvent } from '../lib/types'
@@ -121,8 +123,26 @@ export function TodayScreen() {
   const runningBottle = running.find((e) => e.type === 'bottle')
   const runningPump = running.find((e) => e.type === 'pump')
   const latest = (f: (e: LeelaEvent) => boolean) => events.filter((e) => e.child_id === child.id && f(e)).reduce<LeelaEvent | undefined>((best, e) => (!best || e.started_at > best.started_at ? e : best), undefined)
-  const lastBath = latest((e) => e.type === 'activity' && e.data.kind === 'bath')
-  const lastMassage = latest((e) => e.type === 'activity' && (e.data.kind === 'massage' || e.data.label === 'Massage'))
+  const runningActivity = running.find((e) => e.type === 'activity')
+  const acts = habits(events, child.id, (e) => (e.type === 'activity' ? activityKind(e, ACTIVITY_LABELS) : null), now, tz)
+  const missing = notYet(acts)
+  const doneToday = acts.filter((h) => h.doneToday)
+  const lastActivity = latest((e) => e.type === 'activity' && !e.timer_state)
+  const activitySub = missing.length
+    ? `No ${kindLabel(missing[0].key).toLowerCase()} yet`
+    : doneToday.length
+      ? doneToday.map((h) => kindLabel(h.key)).join(', ')
+      : lastActivity
+        ? `${activityName(lastActivity)} ${agoText(lastActivity.started_at, now)}`
+        : 'Bath, massage, play…'
+  const activityDone = doneToday.length > 0 && missing.length === 0
+  const lastMeal = latest((e) => e.type === 'solids')
+  const sixMonths = child.birth_date ? addMonths(child.birth_date, 6) : null
+  const solidsSub = lastMeal
+    ? agoText(lastMeal.started_at, now)
+    : sixMonths && sixMonths > now
+      ? `From ${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: tz }).format(sixMonths)}`
+      : 'First foods'
   const pumpNext = runningPump ? null : pumpDue(events as never, now, tz)
   const pumpSub = runningPump
     ? `Going ${durationText(now - Date.parse(runningPump.started_at))}`
@@ -179,23 +199,17 @@ export function TodayScreen() {
       tone: 'pump',
       icon: <TypeIcon type="pump" size={28} />,
       active: Boolean(runningPump),
-      onClick: () => setSheet(runningPump ? { type: 'pump', edit: runningPump } : { type: 'pump' }),
+      onClick: () => set({ overlay: { kind: 'pumping' } }),
     },
     {
-      id: 'bath',
-      label: 'Bath',
-      sub: lastBath ? agoText(lastBath.started_at, now) : 'Log a bath',
+      id: 'activity',
+      label: runningActivity ? activityName(runningActivity) : 'Activity',
+      sub: runningActivity ? `Going ${durationText(now - Date.parse(runningActivity.started_at))}` : activitySub,
       tone: 'activity',
-      icon: <TypeIcon type="activity" kind="bath" size={28} />,
-      onClick: () => setSheet({ type: 'activity', preset: { kind: 'bath' } }),
-    },
-    {
-      id: 'massage',
-      label: 'Massage',
-      sub: lastMassage ? agoText(lastMassage.started_at, now) : 'Start now',
-      tone: 'activity',
-      icon: <TypeIcon type="activity" kind="massage" size={28} />,
-      onClick: () => setSheet({ type: 'activity', preset: { kind: 'massage' } }),
+      icon: <TypeIcon type="activity" kind={runningActivity ? String(runningActivity.data.kind ?? '') : 'tummy'} size={28} />,
+      active: Boolean(runningActivity),
+      done: !runningActivity && activityDone,
+      onClick: () => setSheet(runningActivity ? { type: 'activity', edit: runningActivity } : { type: 'activity' }),
     },
     {
       id: 'vitamins',
@@ -205,6 +219,14 @@ export function TodayScreen() {
       icon: <VitaminIcon size={28} />,
       done: vitamins.length > 0 && vitaminsLeft === 0,
       onClick: () => setVitaminsOpen(true),
+    },
+    {
+      id: 'solids',
+      label: 'Solids',
+      sub: solidsSub,
+      tone: 'feed',
+      icon: <TypeIcon type="solids" size={28} />,
+      onClick: () => set({ overlay: { kind: 'solids' } }),
     },
     {
       id: 'more',
@@ -251,7 +273,7 @@ export function TodayScreen() {
             <TimerCard
               key={e.id}
               event={e}
-              onOpen={(ev) => (ev.type === 'sleep' ? setSleepOpen(true) : setSheet({ type: ev.type, edit: ev }))}
+              onOpen={(ev) => (ev.type === 'sleep' ? setSleepOpen(true) : ev.type === 'pump' ? set({ overlay: { kind: 'pumping' } }) : setSheet({ type: ev.type, edit: ev }))}
               onStopped={(ev) => setSheet({ type: ev.type, edit: ev })}
             />
           ))}
@@ -389,6 +411,14 @@ export function TodayScreen() {
       <ChildSheet open={addChild} onClose={() => setAddChild(false)} />
     </div>
   )
+}
+
+const ACTIVITY_LABELS: Record<string, string> = Object.fromEntries(ACTIVITY_KINDS.map((k) => [k.id, k.label]))
+const kindLabel = (k: string) => (k.startsWith('label:') ? k.slice(6) : k === 'outing' ? 'Outing' : (ACTIVITY_LABELS[k] ?? 'Activity'))
+const activityName = (e: LeelaEvent) => kindLabel(activityKind(e, ACTIVITY_LABELS))
+const addMonths = (birth: string, n: number) => {
+  const [y, m, d] = birth.split('-').map(Number)
+  return Date.UTC(y, m - 1 + n, d)
 }
 
 function Stat({ label, value, tone, detail }: { label: string; value: string; tone: string; detail: string }) {
