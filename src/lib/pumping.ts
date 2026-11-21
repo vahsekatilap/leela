@@ -207,8 +207,11 @@ function selfCheck(events: Ev[], now: number, tz: string): Coach['accuracy'] {
     .map((x) => x.start)
     .filter((t) => t > now - 14 * DAY)
   const misses: number[] = []
+  // Each check needs only the 8 days before it.
+  const sorted = events.map((e) => ({ e, t: Date.parse(e.started_at) })).sort((a, b) => a.t - b.t)
   for (const t of starts) {
-    const due = pumpDue(events.filter((e) => Date.parse(e.started_at) < t - MIN) as never, t - MIN, tz)
+    const window = sorted.filter((x) => x.t < t - MIN && x.t > t - 8 * DAY).map((x) => x.e)
+    const due = pumpDue(window as never, t - MIN, tz)
     if (due) misses.push(Math.abs(t - due.dueAt) / MIN)
   }
   if (misses.length < 5) return null

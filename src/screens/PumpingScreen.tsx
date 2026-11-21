@@ -16,11 +16,20 @@ import { localReminder } from '../lib/push'
 import { milkStash, pumpMl, type Lot, type Place } from '../lib/stash'
 import { activeChild, useLeela } from '../lib/store'
 import { sweetSpot, type SweetSpot } from '../lib/sweetspot'
-import { loadAllHistory } from '../lib/sync'
 import { dayStart, durationText, fmtTime } from '../lib/time'
 import type { LeelaEvent } from '../lib/types'
 
 const MIN = 60_000
+
+interface Figures {
+  next: PumpDue | null
+  plan: ReturnType<typeof pumpPlan>
+  target: ReturnType<typeof pumpTarget>
+  sit: Sitting
+  stash: ReturnType<typeof milkStash>
+  coach: ReturnType<typeof pumpingCoach>
+  spot: SweetSpot | null
+}
 const sideName = (s: 'left' | 'right' | 'both') => (s === 'both' ? 'Both sides' : s === 'left' ? 'Left side' : 'Right side')
 const weekday = (t: number, tz: string) => new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tz }).format(t)
 const inText = (ms: number) => (ms <= MIN ? 'now' : `in ${durationText(ms)}`)
@@ -38,31 +47,39 @@ export function PumpingScreen({ open, onClose }: { open: boolean; onClose: () =>
   const tz = family.timezone
   const child = activeChild()
   const [sheet, setSheet] = useState<{ edit?: LeelaEvent } | null>(null)
-  useEffect(() => {
-    if (open) void loadAllHistory()
-  }, [open])
-  const all = useMemo(() => (open ? Object.values(eventsMap).filter((e) => !e.deleted_at) : []), [open, eventsMap])
+  // Only the last 40 days matter here, and the figures are worked out just after the screen opens
+  // (and once a minute), so the screen itself opens at once.
+  const all = useMemo(() => {
+    if (!open) return []
+    const cutoff = new Date(Date.now() - 40 * 86_400_000).toISOString()
+    return Object.values(eventsMap).filter((e) => !e.deleted_at && e.started_at >= cutoff)
+  }, [open, eventsMap])
   const running = all.find((e) => e.type === 'pump' && e.timer_state && e.created_by === userId)
   const now = useNow(running ? 1000 : 30_000)
   const minute = Math.floor(now / MIN)
   const events = useMemo(() => all.filter((e) => e.type === 'pump' || e.type === 'nursing' || e.type === 'bottle'), [all])
-  const startOf = (t: number) => dayStart(t, tz).getTime()
-  // Worked out once a minute; the sitting timer ticks on its own.
-  const m = useMemo(() => {
-    if (!open) return null
-    const t = minute * MIN
-    return {
-      next: pumpDue(events as never, t, tz),
-      plan: pumpPlan(events as never, t, tz),
-      target: pumpTarget(events as never, t, tz, startOf),
-      sit: sitting(events as never, t),
-      stash: milkStash(events as never, t),
-      coach: pumpingCoach(events as never, t, tz, startOf),
-      spot: child ? sweetSpot(all, child, family, t) : null,
-    }
-  }, [open, events, all, minute, tz, child, family]) // eslint-disable-line react-hooks/exhaustive-deps
-  if (!m) return <Overlay open={open} onClose={onClose} title="Pumping">{null}</Overlay>
-  const { next, plan, target, sit, stash, coach, spot } = m
+  const [m, setM] = useState<Figures | null>(null)
+  useEffect(() => {
+    if (!open) return
+    const id = window.setTimeout(() => {
+      const t = minute * MIN
+      const startOf = (x: number) => dayStart(x, tz).getTime()
+      const cut = new Date(t - 16 * 86_400_000).toISOString()
+      setM({
+        next: pumpDue(events as never, t, tz),
+        plan: pumpPlan(events as never, t, tz),
+        target: pumpTarget(events as never, t, tz, startOf),
+        sit: sitting(events as never, t),
+        stash: milkStash(events as never, t),
+        coach: pumpingCoach(events as never, t, tz, startOf),
+        spot: child ? sweetSpot(all.filter((e) => e.started_at >= cut), child, family, t) : null,
+      })
+    }, 30)
+    return () => window.clearTimeout(id)
+  }, [open, events, all, minute, tz, child, family])
+  const next = m?.next ?? null
+  const sit = m?.sit ?? { minutes: 15, usualMin: null }
+  const { plan = [], target = null, stash = null, coach = null, spot = null } = m ?? {}
   const babyName = child?.name ?? 'Baby'
 
   const start = async () => {
@@ -84,12 +101,13 @@ export function PumpingScreen({ open, onClose }: { open: boolean; onClose: () =>
       )}
 
       {!running && next && <NextCard next={next} events={events} tz={tz} now={now} spot={spot} babyName={babyName} />}
+      {!m && <p className="px-1 py-6 text-center text-[15px] text-ink-2">Working out the best times…</p>}
       {target && <TargetCard t={target} tz={tz} />}
       {plan.length > 0 && <PlanCard plan={plan} spot={spot} events={events} tz={tz} now={now} babyName={babyName} />}
-      <StashCard stash={stash} events={events} tz={tz} now={now} />
+      {stash && <StashCard stash={stash} events={events} tz={tz} now={now} />}
 
-      <h2 className="mt-6 mb-3 px-1 font-display text-[22px] font-bold">How it’s going</h2>
-      {!coach ? (
+      {m && <h2 className="mt-6 mb-3 px-1 font-display text-[22px] font-bold">How it’s going</h2>}
+      {!m ? null : !coach ? (
         <p className="rounded-3xl bg-card-2 px-5 py-6 text-center text-[15px] text-ink-2">Log a few pumpings with how many ml each side gave, and the coach starts learning your rhythm and yield.</p>
       ) : (
         <>
