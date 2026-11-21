@@ -1,10 +1,11 @@
 import { MagnifyingGlass, NotePencil } from '@phosphor-icons/react'
 import { TZDate } from '@date-fns/tz'
+import clsx from 'clsx'
 import { useMemo, useState } from 'react'
 import { PhotoThumb } from '../components/PhotoPicker'
 import { Button } from '../components/ui'
 import { noteBody, noteTitle } from '../lib/describe'
-import { activeChild, useLeela } from '../lib/store'
+import { activeChild, loggedBy, useLeela } from '../lib/store'
 import { ageText, fmtLongDate } from '../lib/time'
 import type { LeelaEvent } from '../lib/types'
 
@@ -14,6 +15,7 @@ export function NotesScreen() {
   const set = useLeela((s) => s.set)
   const child = activeChild()
   const [q, setQ] = useState('')
+  const [only, setOnly] = useState<string | null>(null)
   const tz = family.timezone
 
   const notes = useMemo(
@@ -24,7 +26,12 @@ export function NotesScreen() {
     [eventsMap, child?.id],
   )
   const needle = q.trim().toLowerCase()
-  const shown = needle ? notes.filter((n) => `${noteTitle(n)}\n${noteBody(n)}`.toLowerCase().includes(needle)) : notes
+  const writers = useMemo(() => [...new Set(notes.map((n) => loggedBy(n)))], [notes])
+  const shown = notes.filter(
+    (n) =>
+      (!needle || `${noteTitle(n)}\n${noteBody(n)}`.toLowerCase().includes(needle)) &&
+      (only === null || (only === 'photos' ? n.photo_paths.length > 0 : loggedBy(n) === only)),
+  )
   const months = useMemo(() => {
     const out: { key: string; label: string; items: LeelaEvent[] }[] = []
     for (const n of shown) {
@@ -61,6 +68,26 @@ export function NotesScreen() {
         </label>
       )}
 
+      {notes.length > 3 && (
+        <div className="no-scrollbar -mx-5 mb-5 flex gap-2 overflow-x-auto px-5" role="group" aria-label="Show only">
+          {[
+            [null, `All · ${notes.length}`],
+            ['photos', 'With photos'],
+            ...(writers.length > 1 ? writers.map((w) => [w, w === 'you' ? 'Yours' : `By ${w}`]) : []),
+          ].map(([id, label]) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={only === id}
+              onClick={() => setOnly(id)}
+              className={clsx('min-h-10 shrink-0 rounded-full px-4 text-[14px] font-semibold ring-1', only === id ? 'bg-[var(--note)] text-white ring-transparent' : 'bg-card ring-line')}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {notes.length === 0 ? (
         <div className="rounded-[28px] bg-card px-6 py-8 text-center">
           <p className="font-display text-[20px] font-bold">Nothing written yet</p>
@@ -69,7 +96,7 @@ export function NotesScreen() {
           </p>
         </div>
       ) : shown.length === 0 ? (
-        <p className="rounded-3xl bg-card-2 px-5 py-6 text-center text-[15px] text-ink-2">No notes mention “{q.trim()}”.</p>
+        <p className="rounded-3xl bg-card-2 px-5 py-6 text-center text-[15px] text-ink-2">{needle ? `No notes mention “${q.trim()}”.` : 'No notes like that yet.'}</p>
       ) : (
         months.map((m) => (
           <section key={m.key} className="mb-6" aria-label={m.label}>

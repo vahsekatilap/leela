@@ -40,6 +40,10 @@ Outings and visits are the activity kind `outing` with `data.where` (place chips
 
 One period bar (`src/components/history/PeriodBar.tsx`, periods in `src/lib/period.ts`): Day, Week (last 7 days, the default), Month (calendar), All (since birth), plus a sheet for any day, month of life, calendar month or own dates. Day shows the day strip, tappable totals and the timeline. Longer periods show an overview of category rows (`src/lib/insights.ts`: sleep, feeds, diapers, pumping, each activity kind, vitamins, medicine, temperature, symptoms, growth, firsts, notes) with sparklines and change against the period before; every row opens `src/screens/HistoryDetail.tsx` (figures, bars by day/week/month, time of day, every entry). Activities are counted in times; minutes only from entries with a length (most imported ones have none) and the screen says so. Medicines named like vitamins count as vitamins (`isSupplement`). Search (`HistorySearch.tsx`) covers all history; the ⋯ button has the doctor report for the chosen dates (overlay `report` with `from`/`to`; long ranges become weekly rows), the memory book and import. Older entries load on demand (`loadAllHistory`).
 
+## Development guide, speed and offline (21 Nov 2026)
+
+Development (overlay `development`, `src/lib/development.ts`): the CDC's 2022 milestone checklists from 2 months to 2 years; ticking a skill saves a First with `data.dev` = the skill id. Shown in Diary, More › Play and memories and Settings › Care. Screens other than Today load on demand (`lazy` in `App.tsx`, prefetched 3 s after opening). Changes the server refuses go to `db.failed` (Dexie v2) instead of being dropped and are retried on every open (`retryFailed()`); 5xx and timeouts are retried like being offline. Sheets and screens lock page scrolling through a counter (`src/lib/scrollLock.ts`).
+
 ## Vaccines
 
 Leela's three earlier Vaccine entries (1 Sep, 30 Sep, 30 Oct 2026) were linked to the 6, 10 and 14-week doses on 21 Nov 2026, and the birth doses marked as given before.
@@ -66,7 +70,7 @@ Network installs may not work in Claude's workspace. Push work to a branch first
 - Home buttons: Sleep, Feed, Diaper, Bottle, Pump, Bath, Massage, Vitamins, More (a 3×3 grid). Bottle and pumping start now and stop later; stopping opens the entry to fill in the amount.
 - Times are picked on scroll wheels (`WheelTimeSheet` in `src/components/TimeField.tsx`), never the clock dial.
 - The timeline shows "35 min · 8:45 – 9:20 AM" under each entry that lasts a while (`timeSpanText()` in `src/lib/describe.ts`).
-- The Family tab is now Settings. The admin panel (`src/screens/AdminScreen.tsx`, edge function `admin`) shows only to people whose `profiles.prefs.admin` is true: Keshav. Nobody else should see that it exists. WHO growth curves and percentiles appear only there; History shows plain growth.
+- The Family tab is now Settings: a short list (Family, Babies, Care tools, Notifications, Look and units, Records, Account, Admin for Keshav) where each row opens its page (`page` state in `FamilyScreen.tsx`, Android back returns to the list). The admin panel (`src/screens/AdminScreen.tsx`, edge function `admin`) shows only to people whose `profiles.prefs.admin` is true: Keshav. Nobody else should see that it exists. WHO growth curves and percentiles appear only there; History shows plain growth.
 - Sync: opening the app with a copy on the phone fetches only what changed (`refresh()`), renewing the sign-in first; coming back to the app (`resume()`) catches up at once and reconnects live updates; a 15-second safety check runs while live updates are down. While catching up after a long gap, Today says so and dims timers.
 
 ## Known follow-ups

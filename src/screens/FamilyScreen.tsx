@@ -1,10 +1,10 @@
-import { BookOpenText, ClockCounterClockwise, Copy, Crown, DownloadSimple, FileArrowUp, FileText, PencilSimple, Plus, ShareNetwork, Syringe, X } from '@phosphor-icons/react'
+import { ArrowLeft, Baby, Bell, BookOpenText, CaretRight, ClockCounterClockwise, Copy, Crown, Drop, DownloadSimple, FileArrowUp, FileText, Folders, Moon, PencilSimple, Plant, Plus, ShareNetwork, ShieldStar, Syringe, UserCircle, UsersThree, X, Carrot } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { ActivitySheet } from '../components/ActivitySheet'
 import { AlertSettings } from '../components/AlertSettings'
 import { ChildSheet } from '../components/ChildSheet'
 import { ClockTimeField } from '../components/TimeField'
-import { Sheet } from '../components/Sheet'
+import { Sheet, useBackToClose } from '../components/Sheet'
 import { Button, Choices, TextInput } from '../components/ui'
 import { rpc, saveDisplayName, saveFamilySettings, savePrefs } from '../lib/actions'
 import { MAX_FAMILY_MEMBERS } from '../lib/config'
@@ -19,6 +19,8 @@ import { meaningById } from '../lib/import/vocab'
 import { ageText } from '../lib/time'
 import type { Child } from '../lib/types'
 import type { RpcName } from '../lib/database.types'
+
+declare const __APP_VERSION__: string
 
 export function FamilyScreen() {
   const family = useLeela((s) => s.family)!
@@ -37,6 +39,17 @@ export function FamilyScreen() {
   const [busy, setBusy] = useState(false)
   const [activity, setActivity] = useState(false)
   const [exporting, setExporting] = useState(false)
+  // Settings opens as a short list; each row opens its page.
+  const [page, setPage] = useState<Page | null>(null)
+  useBackToClose(page !== null, () => {
+    setPage(null)
+    window.scrollTo({ top: 0 })
+  })
+  const go = (p: Page) => {
+    setPage(p)
+    window.scrollTo({ top: 0 })
+  }
+  const overlay = (kind: 'vaccines' | 'development' | 'solids' | 'pumping' | 'report' | 'book' | 'admin') => useLeela.getState().set({ overlay: { kind } })
 
   const download = async (kind: 'json' | 'csv') => {
     setExporting(true)
@@ -101,33 +114,63 @@ export function FamilyScreen() {
 
   return (
     <div className="mx-auto max-w-[560px] px-5 pb-32">
-      <header className="safe-top pb-4">
-        <h1 className="font-display text-[30px] font-extrabold leading-tight">Settings</h1>
-        <p className="text-[15px] text-ink-2">
-          {family.name || 'Family'} · {members.length} of {MAX_FAMILY_MEMBERS} members
-        </p>
-        <nav className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5" aria-label="Jump to">
-          {[
-            ['set-family', 'Family'],
-            ['set-babies', 'Babies'],
-            ['set-alerts', 'Notifications'],
-            ['set-display', 'Display'],
-            ['set-reports', 'Reports'],
-            ['set-data', 'Your data'],
-            ['set-account', 'Account'],
-          ].map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="min-h-10 shrink-0 rounded-full bg-card px-4 text-[15px] font-semibold"
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-      </header>
+      {page === null ? (
+        <>
+          <header className="safe-top pb-4">
+            <h1 className="font-display text-[30px] font-extrabold leading-tight">Settings</h1>
+            <p className="text-[15px] text-ink-2">{family.name || 'Family'} · {myName || email}</p>
+          </header>
+          <Rows
+            title="Family"
+            rows={[
+              { icon: <UsersThree size={24} weight="duotone" />, label: 'Family and members', sub: `Code ${family.code} · ${members.length} of ${MAX_FAMILY_MEMBERS} members`, onClick: () => go('family') },
+              { icon: <Baby size={24} weight="duotone" />, label: children.length === 1 ? children[0].name : 'Babies', sub: children.map((c) => (c.birth_date ? `${c.name}, ${ageText(c.birth_date)}` : c.name)).join(' · ') || 'Add a baby', onClick: () => go('babies') },
+            ]}
+          />
+          <Rows
+            title="Care"
+            rows={[
+              { icon: <Syringe size={24} weight="duotone" />, label: 'Vaccine schedule', sub: 'India’s IAP schedule, with reminders', onClick: () => overlay('vaccines') },
+              { icon: <Plant size={24} weight="duotone" />, label: 'Development', sub: 'Skills to look for at her age', onClick: () => overlay('development') },
+              { icon: <Carrot size={24} weight="duotone" />, label: 'Solids and foods', sub: 'Readiness, foods tried, allergens', onClick: () => overlay('solids') },
+              { icon: <Drop size={24} weight="duotone" />, label: 'Pumping coach', sub: 'Yield, best times, what would help', onClick: () => overlay('pumping') },
+            ]}
+          />
+          <Rows
+            title="This phone"
+            rows={[
+              { icon: <Bell size={24} weight="duotone" />, label: 'Notifications', sub: 'What to be told, and when', onClick: () => go('alerts') },
+              { icon: <Moon size={24} weight="duotone" />, label: 'Look and units', sub: `${theme === 'night' ? 'Warm night' : theme === 'day' ? 'Light' : 'Dark'} · ${prefs.temp === 'f' ? '°F' : '°C'} · ${prefs.length === 'in' ? 'inches' : 'cm'}`, onClick: () => go('display') },
+            ]}
+          />
+          <Rows
+            title="Records"
+            rows={[
+              { icon: <FileText size={24} weight="duotone" />, label: 'Doctor report', sub: 'Any dates, ready to save as a PDF', onClick: () => overlay('report') },
+              { icon: <BookOpenText size={24} weight="duotone" />, label: 'Diary book', sub: 'Month by month, to print or keep', onClick: () => overlay('book') },
+              { icon: <Folders size={24} weight="duotone" />, label: 'Past logs and your data', sub: 'Import, download, activity, words learned', onClick: () => go('data') },
+            ]}
+          />
+          <Rows
+            title="Account"
+            rows={[
+              { icon: <UserCircle size={24} weight="duotone" />, label: 'Your account', sub: email ?? '', onClick: () => go('account') },
+              ...(prefs.admin === true ? [{ icon: <ShieldStar size={24} weight="duotone" />, label: 'Admin', sub: 'Usage, growth charts and checks', onClick: () => overlay('admin') }] : []),
+            ]}
+          />
+          <p className="mt-2 text-center text-[13px] text-ink-3">LAPdiary {typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''}</p>
+        </>
+      ) : (
+        <header className="safe-top flex items-center gap-2 pb-4">
+          <button type="button" onClick={() => window.history.back()} className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-card" aria-label="Back to Settings">
+            <ArrowLeft size={22} weight="bold" />
+          </button>
+          <h1 className="font-display text-[26px] font-extrabold leading-tight">{PAGE_TITLES[page]}</h1>
+        </header>
+      )}
 
+      {page === 'family' && (
+        <>
       <section id="set-family" className="mb-6 scroll-mt-4 rounded-[28px] bg-card p-5 shadow-lift" aria-labelledby="code-h">
         <h2 id="code-h" className="text-[15px] font-semibold text-ink-2">
           Family code
@@ -218,6 +261,10 @@ export function FamilyScreen() {
         </ul>
       </Section>
 
+        </>
+      )}
+
+      {page === 'babies' && (
       <Section id="set-babies" title="Babies">
         <ul className="divide-y divide-line">
           {children.map((c) => (
@@ -237,10 +284,15 @@ export function FamilyScreen() {
         </Button>
       </Section>
 
+      )}
+
+      {page === 'alerts' && (
       <Section id="set-alerts" title="Notifications">
         <AlertSettings />
       </Section>
+      )}
 
+      {page === 'display' && (
       <Section id="set-display" title="Display and units">
         <div className="mb-4">
           <div className="mb-2 text-[15px] font-semibold text-ink-2">Length</div>
@@ -291,6 +343,10 @@ export function FamilyScreen() {
         <p className="-mt-3 text-[14px] text-ink-2">Sleep that starts in this window counts as night sleep.</p>
       </Section>
 
+      )}
+
+      {page === 'data' && (
+        <>
       <Section title="Past logs">
         <p className="mb-3 text-[15px] text-ink-2">Bring in what you wrote before LAPdiary, from a PDF, Word file, Google Doc, spreadsheet or WhatsApp chat. You check everything before it’s saved, and any import can be undone.</p>
         <Button variant="secondary" size="md" className="w-full" onClick={() => useLeela.getState().set({ overlay: { kind: 'import' } })}>
@@ -328,21 +384,6 @@ export function FamilyScreen() {
         )}
       </Section>
 
-      <Section id="set-reports" title="Reports">
-        <p className="mb-3 text-[15px] text-ink-2">A one-page summary of sleep, feeds, nappies and medicines to share with the doctor.</p>
-        <div className="flex flex-col gap-2">
-          <Button variant="secondary" size="md" onClick={() => useLeela.getState().set({ overlay: { kind: 'report' } })}>
-            <FileText size={18} weight="bold" aria-hidden="true" /> Doctor report (PDF)
-          </Button>
-          <Button variant="secondary" size="md" onClick={() => useLeela.getState().set({ overlay: { kind: 'vaccines' } })}>
-            <Syringe size={18} weight="bold" aria-hidden="true" /> Vaccine schedule
-          </Button>
-          <Button variant="secondary" size="md" onClick={() => useLeela.getState().set({ overlay: { kind: 'book' } })}>
-            <BookOpenText size={18} weight="bold" aria-hidden="true" /> Diary book
-          </Button>
-        </div>
-      </Section>
-
       <Section id="set-data" title="Your data">
         <p className="mb-3 text-[15px] text-ink-2">
           Everything you log is saved on LAPdiary’s server and kept for as long as your family uses LAPdiary. Nothing expires. Deleted entries are hidden, not erased, and every change is recorded in the activity log.
@@ -360,6 +401,10 @@ export function FamilyScreen() {
         </div>
       </Section>
 
+        </>
+      )}
+
+      {page === 'account' && (
       <Section id="set-account" title="Your account">
         <p className="mb-3 text-[15px] text-ink-2">Signed in as {email}</p>
         <div className="flex flex-col gap-2">
@@ -381,10 +426,6 @@ export function FamilyScreen() {
         </div>
       </Section>
 
-      {prefs.admin === true && (
-        <button type="button" onClick={() => useLeela.getState().set({ overlay: { kind: 'admin' } })} className="mb-6 flex min-h-12 w-full items-center justify-center rounded-[22px] bg-card text-[16px] font-semibold text-ink-2">
-          Admin
-        </button>
       )}
 
       <Sheet open={nameSheet} onClose={() => setNameSheet(false)} title="Your name" footer={
@@ -413,6 +454,31 @@ export function FamilyScreen() {
       {childSheet && <ChildSheet open onClose={() => setChildSheet(null)} child={childSheet.child} />}
       <ActivitySheet open={activity} onClose={() => setActivity(false)} />
     </div>
+  )
+}
+
+type Page = 'family' | 'babies' | 'alerts' | 'display' | 'data' | 'account'
+const PAGE_TITLES: Record<Page, string> = { family: 'Family', babies: 'Babies', alerts: 'Notifications', display: 'Look and units', data: 'Past logs and data', account: 'Your account' }
+
+function Rows({ title, rows }: { title: string; rows: { icon: React.ReactNode; label: string; sub: string; onClick: () => void }[] }) {
+  return (
+    <section className="mb-5" aria-label={title}>
+      <h2 className="mb-2 px-1 text-[14px] font-semibold tracking-wide text-ink-3 uppercase">{title}</h2>
+      <ul className="divide-y divide-line overflow-hidden rounded-[22px] bg-card">
+        {rows.map((r) => (
+          <li key={r.label}>
+            <button type="button" onClick={r.onClick} className="flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left active:bg-card-2">
+              <span className="shrink-0 text-brand">{r.icon}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[16px] font-semibold">{r.label}</span>
+                {r.sub && <span className="block truncate text-[13.5px] text-ink-2">{r.sub}</span>}
+              </span>
+              <CaretRight size={18} weight="bold" className="shrink-0 text-ink-3" aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
