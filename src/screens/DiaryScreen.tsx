@@ -2,7 +2,7 @@ import clsx from 'clsx'
 import { BookOpenText, CaretDown, ClockCounterClockwise, NotePencil, Plant, Star } from '@phosphor-icons/react'
 import { ageMonthsAt, devPlan, skillsDone } from '../lib/development'
 import { TZDate } from '@date-fns/tz'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { LogSheet } from '../components/LogSheet'
 import { PhotoThumb } from '../components/PhotoPicker'
 import { Button } from '../components/ui'
@@ -10,6 +10,7 @@ import { eventTitle } from '../lib/describe'
 import { activityLabel, dayAggs } from '../lib/insights'
 import { daysOf, lifeMonths, rangeText, type Period } from '../lib/period'
 import { activeChild, useLeela } from '../lib/store'
+import { loadAllHistory } from '../lib/sync'
 import { addDaysTz, ageText, durationText, fmtLongDate, fmtShortDate } from '../lib/time'
 import type { Child, EventType, Family, LeelaEvent } from '../lib/types'
 import { fmtWeight } from '../lib/units'
@@ -29,6 +30,10 @@ export function DiaryScreen() {
   const [view, setView] = useState<'story' | 'photos'>('story')
   const tz = family.timezone
   const now = Date.now()
+  // The phone keeps the last few months; the diary goes back to the beginning.
+  useEffect(() => {
+    void loadAllHistory()
+  }, [])
 
   const events = useMemo(() => Object.values(eventsMap).filter((e) => !e.deleted_at), [eventsMap])
   const memories = useMemo(() => events.filter((e) => e.child_id === child?.id && isMemory(e)).sort((a, b) => b.started_at.localeCompare(a.started_at)), [events, child?.id])
@@ -73,8 +78,6 @@ export function DiaryScreen() {
         </button>
       </div>
 
-      {child.birth_date && <DevCard onOpen={() => set({ overlay: { kind: 'development' } })} events={events} childId={child.id} birth={child.birth_date} />}
-
       <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-card p-1 ring-1 ring-line" role="tablist" aria-label="Diary view">
         {(
           [
@@ -115,7 +118,7 @@ export function DiaryScreen() {
               segments={Object.values(segmentsMap)}
               userId={userId}
               items={memories.filter((e) => Date.parse(e.started_at) >= m.period.from && Date.parse(e.started_at) < m.period.to)}
-              startOpen={i < 2}
+              startOpen={i === 0}
               onOpen={open}
             />
           ))}
@@ -125,7 +128,13 @@ export function DiaryScreen() {
         <Memories label="Memories" items={memories} family={family} onOpen={open} />
       )}
 
-      <section className="mt-6 flex items-center gap-4 rounded-[26px] p-4" style={{ background: 'var(--milestone-soft)' }}>
+      {child.birth_date && (
+        <div className="mt-6">
+          <DevCard onOpen={() => set({ overlay: { kind: 'development' } })} events={events} childId={child.id} birth={child.birth_date} />
+        </div>
+      )}
+
+      <section className="flex items-center gap-4 rounded-[26px] p-4" style={{ background: 'var(--milestone-soft)' }}>
         <BookOpenText size={30} weight="duotone" className="shrink-0" style={{ color: 'var(--milestone)' }} aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <p className="font-display text-[18px] font-bold leading-tight">The diary book</p>

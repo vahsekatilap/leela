@@ -54,6 +54,10 @@ One period bar (`src/components/history/PeriodBar.tsx`, periods in `src/lib/peri
 
 Development (overlay `development`, `src/lib/development.ts`): the CDC's 2022 milestone checklists from 2 months to 2 years; ticking a skill saves a First with `data.dev` = the skill id. Shown in Diary, More › Play and memories and Settings › Care. Screens other than Today load on demand (`lazy` in `App.tsx`, prefetched 3 s after opening). Changes the server refuses go to `db.failed` (Dexie v2) instead of being dropped and are retried on every open (`retryFailed()`); 5xx and timeouts are retried like being offline. Sheets and screens lock page scrolling through a counter (`src/lib/scrollLock.ts`).
 
+## Doctor visit helper (22 Nov 2026)
+
+Overlay `visit` (`src/screens/VisitScreen.tsx`, `src/lib/visit.ts`), from More › Health and Settings › Care: what changed since the last Doctor visit entry (growth with g a week, sleep/feeds/nappies this week against the week before the visit, temperatures, medicines, symptoms, vaccines due, new foods and skills), questions to ask (suggested from the logs plus their own, in `children.settings.visit.questions`, shared by both parents) with the doctor's answers, Share (phone share sheet or copy), the full report for those dates, and "Visit done" (saves a Doctor visit entry with the questions and answers, then clears the list). Diary and Notes load all history when opened.
+
 ## Vaccines
 
 Leela's three earlier Vaccine entries (1 Sep, 30 Sep, 30 Oct 2026) were linked to the 6, 10 and 14-week doses on 21 Nov 2026, and the birth doses marked as given before.

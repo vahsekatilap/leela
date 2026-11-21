@@ -1,4 +1,4 @@
-import { ArrowLeft, Baby, Bell, BookOpenText, CaretRight, ClockCounterClockwise, Copy, Crown, Drop, DownloadSimple, FileArrowUp, FileText, Folders, Moon, PencilSimple, Plant, Plus, ShareNetwork, ShieldStar, Syringe, UserCircle, UsersThree, X, Carrot } from '@phosphor-icons/react'
+import { ArrowLeft, Baby, Bell, BookOpenText, CaretRight, ClockCounterClockwise, Copy, Crown, Drop, DownloadSimple, FileArrowUp, FileText, Folders, Moon, PencilSimple, Plant, Plus, ShareNetwork, ShieldStar, Stethoscope, Syringe, UserCircle, UsersThree, X, Carrot } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { ActivitySheet } from '../components/ActivitySheet'
 import { AlertSettings } from '../components/AlertSettings'
@@ -49,7 +49,7 @@ export function FamilyScreen() {
     setPage(p)
     window.scrollTo({ top: 0 })
   }
-  const overlay = (kind: 'vaccines' | 'development' | 'solids' | 'pumping' | 'report' | 'book' | 'admin') => useLeela.getState().set({ overlay: { kind } })
+  const overlay = (kind: 'vaccines' | 'development' | 'solids' | 'pumping' | 'report' | 'book' | 'admin' | 'visit') => useLeela.getState().set({ overlay: { kind } })
 
   const download = async (kind: 'json' | 'csv') => {
     setExporting(true)
@@ -130,6 +130,7 @@ export function FamilyScreen() {
           <Rows
             title="Care"
             rows={[
+              { icon: <Stethoscope size={24} weight="duotone" />, label: 'Doctor visit', sub: 'What’s changed, questions to ask, share', onClick: () => overlay('visit') },
               { icon: <Syringe size={24} weight="duotone" />, label: 'Vaccine schedule', sub: 'India’s IAP schedule, with reminders', onClick: () => overlay('vaccines') },
               { icon: <Plant size={24} weight="duotone" />, label: 'Development', sub: 'Skills to look for at her age', onClick: () => overlay('development') },
               { icon: <Carrot size={24} weight="duotone" />, label: 'Solids and foods', sub: 'Readiness, foods tried, allergens', onClick: () => overlay('solids') },

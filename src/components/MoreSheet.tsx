@@ -56,6 +56,11 @@ export function MoreSheet({
               Solids: foods tried, allergens, readiness <CaretRight size={18} weight="bold" className="text-ink-3" aria-hidden="true" />
             </button>
           )}
+          {g.title === 'Health' && (
+            <button type="button" onClick={() => { onClose(); useLeela.getState().set({ overlay: { kind: 'visit' } }) }} className="mt-2 flex min-h-12 w-full items-center justify-between rounded-2xl bg-card-2 px-4 text-[16px] font-semibold ring-1 ring-line">
+              Doctor visit: what’s changed, questions to ask <CaretRight size={18} weight="bold" className="text-ink-3" aria-hidden="true" />
+            </button>
+          )}
           {g.title === 'Health' && onVaccines && (
             <button type="button" onClick={onVaccines} className="mt-2 flex min-h-12 w-full items-center justify-between rounded-2xl bg-card-2 px-4 text-[16px] font-semibold ring-1 ring-line">
               Vaccine schedule <CaretRight size={18} weight="bold" className="text-ink-3" aria-hidden="true" />

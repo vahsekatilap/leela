@@ -26,6 +26,7 @@ const screens = {
   pumping: () => import('./screens/PumpingScreen'),
   solids: () => import('./screens/SolidsScreen'),
   development: () => import('./screens/DevelopmentScreen'),
+  visit: () => import('./screens/VisitScreen'),
 }
 const HistoryScreen = lazy(() => screens.history().then((m) => ({ default: m.HistoryScreen })))
 const NotesScreen = lazy(() => screens.notes().then((m) => ({ default: m.NotesScreen })))
@@ -39,6 +40,7 @@ const AdminScreen = lazy(() => screens.admin().then((m) => ({ default: m.AdminSc
 const PumpingScreen = lazy(() => screens.pumping().then((m) => ({ default: m.PumpingScreen })))
 const SolidsScreen = lazy(() => screens.solids().then((m) => ({ default: m.SolidsScreen })))
 const DevelopmentScreen = lazy(() => screens.development().then((m) => ({ default: m.DevelopmentScreen })))
+const VisitScreen = lazy(() => screens.visit().then((m) => ({ default: m.VisitScreen })))
 
 /** Mounts a full screen the first time it's opened, then keeps it (so it can animate closed). */
 function Later({ open, children }: { open: boolean; children: React.ReactNode }) {
@@ -140,6 +142,9 @@ export function App() {
         </Later>
         <Later open={overlay?.kind === 'solids'}>
           <SolidsScreen open={overlay?.kind === 'solids'} onClose={closeOverlay} />
+        </Later>
+        <Later open={overlay?.kind === 'visit'}>
+          <VisitScreen open={overlay?.kind === 'visit'} onClose={closeOverlay} />
         </Later>
         <Later open={overlay?.kind === 'development'}>
           <DevelopmentScreen open={overlay?.kind === 'development'} onClose={closeOverlay} />

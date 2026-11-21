@@ -1,11 +1,12 @@
 import { MagnifyingGlass, NotePencil } from '@phosphor-icons/react'
 import { TZDate } from '@date-fns/tz'
 import clsx from 'clsx'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PhotoThumb } from '../components/PhotoPicker'
 import { Button } from '../components/ui'
 import { noteBody, noteTitle } from '../lib/describe'
 import { activeChild, loggedBy, useLeela } from '../lib/store'
+import { loadAllHistory } from '../lib/sync'
 import { ageText, fmtLongDate } from '../lib/time'
 import type { LeelaEvent } from '../lib/types'
 
@@ -17,6 +18,10 @@ export function NotesScreen() {
   const [q, setQ] = useState('')
   const [only, setOnly] = useState<string | null>(null)
   const tz = family.timezone
+  // Notes go back to the beginning, not just the months the phone keeps.
+  useEffect(() => {
+    void loadAllHistory()
+  }, [])
 
   const notes = useMemo(
     () =>
@@ -54,7 +59,7 @@ export function NotesScreen() {
     <div className="mx-auto max-w-[560px] px-5 pb-32">
       <header className="safe-top pb-4">
         <h1 className="font-display text-[30px] font-extrabold leading-tight">Notes</h1>
-        <p className="text-[15px] text-ink-2">Memories, firsts and everything in between. They all go into {child.name}’s diary.</p>
+        <p className="text-[15px] text-ink-2">Everything written about {child.name}, newest first.</p>
       </header>
 
       <Button tone="note" className="mb-4 w-full" onClick={() => open()}>
