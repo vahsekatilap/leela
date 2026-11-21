@@ -12,12 +12,16 @@
 //      status also has (added 21 Nov 2026, older Ghar builds ignore them): wake_range [from, to],
 //      pump { side, due_at, last_at, last_kind, expect_ml, other: { side, due_at } | null } | null,
 //      vitamins { list: [name], left: [name] }
+//      (added 22 Nov 2026) stash { fridge_ml, freezer_ml, oldest: { place, ml, use_by } | null },
+//      nudges [{ title, body, important }]: the same gentle words and Important notes LAPdiary shows
 //   { action: "log", kind: "sleep"|"wake"|"feed"|"nappy"|"note"|"activity"|"vitamin", at?, room?, detail? } -> { ok, id }
 //      activity: detail "Massage", "Bath", "Tummy time", "Outing: <place>"; vitamin: detail = its name
+//      feed: detail "Breast" | "Bottle" | "Formula" | "Solids", optionally "· 90 ml" and, for breast
+//      milk, "· fridge" / "· freezer" / "· fresh" (where the milk came from, for the stash)
 //   { action: "delete", id }            -> { ok }   (only entries that were logged from Ghar)
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { sweetSpot } from './sweetspot.js'
-import { expectedMl, localMidnight, pumpDue, vitaminsLeft } from './alerts.js'
+import { expectedMl, feedNudge, localMidnight, milkStash, nappyNudge, pumpDue, routineNudges, vitaminsLeft } from './alerts.js'
 
 const GHAR_URL = 'https://sfjzdkajewcrcqzbpyou.supabase.co'
 const DAY = 86_400_000
@@ -178,6 +182,37 @@ async function status(client: Row, link: Row, days: number) {
   } catch (err) {
     console.error('pump', err)
   }
+  // The milk stash: pumped milk in the fridge (4 days) and freezer (6 months).
+  let stash: Row | null = null
+  try {
+    const { data: milk } = await client
+      .from('events')
+      .select('id, type, started_at, ended_at, timer_state, deleted_at, data, child_id')
+      .eq('family_id', link.family_id)
+      .is('deleted_at', null)
+      .in('type', ['pump', 'bottle'])
+      .gte('started_at', new Date(now - 190 * DAY).toISOString())
+      .limit(5000)
+    const st = milkStash((milk ?? []) as never, now)
+    if (st.lots.length) {
+      const o = st.lots[0]
+      stash = { fridge_ml: st.fridgeMl, freezer_ml: st.freezerMl, oldest: { place: o.place, ml: o.left, use_by: new Date(o.useBy).toISOString() } }
+    }
+  } catch (err) {
+    console.error('stash', err)
+  }
+  // Gentle nudges and Important notes, as LAPdiary shows them (never while she sleeps).
+  const nudges: Row[] = []
+  try {
+    if (!running && child) {
+      const day = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(now)
+      const f = ss?.feed && (ss.status === 'ok' || ss.status === 'newborn') ? feedNudge(ss.feed as never, ss.ageDays, child.name, mine as never, link.child_id, now, tz) : null
+      const n = nappyNudge(mine as never, link.child_id, child.name, ss?.ageDays ?? null, now, tz)
+      for (const x of [f, n, ...routineNudges(mine as never, link.child_id, child.name, now, tz, day)]) if (x) nudges.push({ title: x.title, body: x.body, important: Boolean(x.important) })
+    }
+  } catch (err) {
+    console.error('nudges', err)
+  }
   const supplements = Array.isArray(child?.settings?.supplements) ? (child.settings.supplements as Row[]).map((x) => String(x?.name ?? '')).filter(Boolean) : []
   const dayStart = localMidnight(now, tz)
   return {
@@ -198,6 +233,8 @@ async function status(client: Row, link: Row, days: number) {
       wake_range: ss?.wakeRange ? ss.wakeRange.map((t: number) => new Date(t).toISOString()) : null,
       pump,
       vitamins: supplements.length ? { list: supplements, left: vitaminsLeft(child?.settings, mine as never, link.child_id, dayStart, now + 60_000) } : null,
+      stash,
+      nudges,
     },
     logs: asGharLogs(mine.filter((e) => Date.parse(e.started_at) >= cutoff || (e.ended_at && Date.parse(e.ended_at) >= cutoff)), names).slice(0, 300),
   }
@@ -231,7 +268,13 @@ async function log(client: Row, link: Row, me: Access, body: Row) {
     const d = detail.toLowerCase()
     const type = d.startsWith('breast') ? 'nursing' : d.startsWith('solid') ? 'solids' : 'bottle'
     const data: Row = { ghar: { ...ghar, detail: detail || undefined } }
-    if (type === 'bottle') data.contents = d.startsWith('formula') ? 'formula' : 'breast'
+    if (type === 'bottle') {
+      data.contents = d.startsWith('formula') ? 'formula' : 'breast'
+      const ml = d.match(/(\d{2,3})\s*ml/)
+      if (ml) data.amount_ml = Number(ml[1])
+      const from = d.match(/\b(fridge|freezer|fresh)\b/)
+      if (from && data.contents === 'breast') data.stash = from[1]
+    }
     row = { ...base, id, type, started_at: at, ended_at: at, data }
   } else if (body.kind === 'nappy') {
     const d = detail.toLowerCase()
