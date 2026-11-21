@@ -85,7 +85,7 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "revision": "a0fa6bd94abf36300e356754ebe8e6fc"
   }, {
     "url": "index.html",
-    "revision": "dc1fe31083161d5c815697fb70353e8c"
+    "revision": "348c7f2085865c19d901f1f3eab0d191"
   }, {
     "url": "icon-maskable-512.png",
     "revision": "0714d37eb01eca0b9cd3ac13a0e321fc"
@@ -111,7 +111,7 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "url": "assets/useWidth-DutuY3mn.js",
     "revision": null
   }, {
-    "url": "assets/ui-CcHvhC5K.js",
+    "url": "assets/ui-DOizjyBf.js",
     "revision": null
   }, {
     "url": "assets/store-v53ZpAsV.js",
@@ -120,10 +120,10 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "url": "assets/seed-BWM65Z3e.js",
     "revision": null
   }, {
-    "url": "assets/photos-eF8rtFjQ.js",
+    "url": "assets/photos-6IXfubZ4.js",
     "revision": null
   }, {
-    "url": "assets/period-DaXtm6yJ.js",
+    "url": "assets/period-D_m0FMuJ.js",
     "revision": null
   }, {
     "url": "assets/pdf.worker.min-DI4FfYVf.js",
@@ -144,25 +144,25 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "url": "assets/mukta-latin-400-normal-DXND9OdD.woff2",
     "revision": null
   }, {
-    "url": "assets/insights-CfP9ecDH.js",
+    "url": "assets/insights-CuIimKw4.js",
     "revision": null
   }, {
-    "url": "assets/index-D-mxqEKO.js",
+    "url": "assets/index-D3FeRVDj.css",
     "revision": null
   }, {
-    "url": "assets/index-B9kQFgVV.css",
+    "url": "assets/index-Cp_vRol8.js",
     "revision": null
   }, {
     "url": "assets/development-BlHKNla0.js",
     "revision": null
   }, {
-    "url": "assets/charts-CJAW6BbZ.js",
+    "url": "assets/charts-BaoakX1q.js",
     "revision": null
   }, {
-    "url": "assets/chartUtils-C3rVYjt-.js",
+    "url": "assets/chartUtils-DuIPFLq-.js",
     "revision": null
   }, {
-    "url": "assets/bits-CaiubPJK.js",
+    "url": "assets/bits-BR99JTf5.js",
     "revision": null
   }, {
     "url": "assets/baloo-2-vietnamese-wght-normal-C4ZonJY6.woff2",
@@ -177,94 +177,100 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "url": "assets/baloo-2-devanagari-wght-normal-B4j4n2PV.woff2",
     "revision": null
   }, {
-    "url": "assets/alerts-xbxsG-8A.js",
+    "url": "assets/alerts-B7vmU1CD.js",
     "revision": null
   }, {
-    "url": "assets/actions-BNDv1WFH.js",
+    "url": "assets/actions-D3y6Sbxj.js",
     "revision": null
   }, {
-    "url": "assets/VaccinesScreen-CbCLGLWR.js",
+    "url": "assets/VaccinesScreen-7Ob79pLK.js",
     "revision": null
   }, {
-    "url": "assets/TimeField-BdvIwBMG.js",
+    "url": "assets/TimeField-DtBgqh5Y.js",
     "revision": null
   }, {
-    "url": "assets/Star.es-g2YlmsOz.js",
+    "url": "assets/Star.es-D9G7P9kh.js",
     "revision": null
   }, {
-    "url": "assets/SolidsScreen-LLcVmm46.js",
+    "url": "assets/SolidsScreen-Ba4e_ppQ.js",
     "revision": null
   }, {
-    "url": "assets/Sheet-C5DhHN7B.js",
+    "url": "assets/Sheet-CNX3ItNi.js",
     "revision": null
   }, {
-    "url": "assets/ReportScreen-DKnCt5Uu.js",
+    "url": "assets/ReportScreen-BmRhexr-.js",
     "revision": null
   }, {
-    "url": "assets/PumpingScreen-JUcxwj8t.js",
+    "url": "assets/PumpingScreen-9Rwtpg_Y.js",
     "revision": null
   }, {
-    "url": "assets/Printer.es-BGpkToqd.js",
+    "url": "assets/Printer.es-BLBL-O3o.js",
     "revision": null
   }, {
-    "url": "assets/PhotoPicker-kgdpGh_8.js",
+    "url": "assets/PhotoPicker-CLUo6Ql2.js",
     "revision": null
   }, {
-    "url": "assets/NotesScreen-CpUL8ue2.js",
+    "url": "assets/NotesScreen-DgNqUA-i.js",
     "revision": null
   }, {
-    "url": "assets/NotePencil.es-CXGlIeHk.js",
+    "url": "assets/NotePencil.es-tiKY8Oun.js",
     "revision": null
   }, {
-    "url": "assets/MagnifyingGlass.es-CEMiUAbe.js",
+    "url": "assets/MagnifyingGlass.es-B1R0eJ5o.js",
     "revision": null
   }, {
-    "url": "assets/ImportScreen-CqUdPHQu.js",
+    "url": "assets/Lightbulb.es-CW5tpnVf.js",
     "revision": null
   }, {
-    "url": "assets/Icon-D59-31mH.js",
+    "url": "assets/ImportScreen-P3YyEYXi.js",
     "revision": null
   }, {
-    "url": "assets/HistoryScreen-B9T_UBTz.js",
+    "url": "assets/Icon-BGtAoafE.js",
     "revision": null
   }, {
-    "url": "assets/GrowthCard-Hr82ltrp.js",
+    "url": "assets/HistoryScreen-DWkG6Pi1.js",
     "revision": null
   }, {
-    "url": "assets/FileText.es-BqkgrAAX.js",
+    "url": "assets/GrowthCard-DSjRfxFz.js",
     "revision": null
   }, {
-    "url": "assets/FileArrowUp.es-CtX5oVmd.js",
+    "url": "assets/FileText.es-Dh5gDdIa.js",
     "revision": null
   }, {
-    "url": "assets/FamilyScreen-C-1MFTYl.js",
+    "url": "assets/FileArrowUp.es-BNDhfJeC.js",
     "revision": null
   }, {
-    "url": "assets/DiaryScreen-BX68jV_a.js",
+    "url": "assets/FamilyScreen-Db7A4M7Q.js",
     "revision": null
   }, {
-    "url": "assets/DevelopmentScreen-DLUTvjeJ.js",
+    "url": "assets/Drop.es-BpsExDTY.js",
     "revision": null
   }, {
-    "url": "assets/CaretRight.es-B7QxIIT6.js",
+    "url": "assets/DiaryScreen-Cze3vfX4.js",
     "revision": null
   }, {
-    "url": "assets/CaretDown.es-CHLwjlHc.js",
+    "url": "assets/DevelopmentScreen-CTsD5udf.js",
     "revision": null
   }, {
-    "url": "assets/BookScreen-D682WpAU.js",
+    "url": "assets/CaretRight.es-BGfKTrS2.js",
     "revision": null
   }, {
-    "url": "assets/BarChart-DLaCUNob.js",
+    "url": "assets/CaretDown.es-Dg0ck2z5.js",
     "revision": null
   }, {
-    "url": "assets/Baby.es-Dux7i7wy.js",
+    "url": "assets/BookScreen-Wn2fYhXj.js",
     "revision": null
   }, {
-    "url": "assets/ArrowLeft.es-BnYaYpTy.js",
+    "url": "assets/BarChart-tivL2PZG.js",
     "revision": null
   }, {
-    "url": "assets/AdminScreen-BeoG2sse.js",
+    "url": "assets/Baby.es-CzK6ApK-.js",
+    "revision": null
+  }, {
+    "url": "assets/ArrowLeft.es-CX3vV3gG.js",
+    "revision": null
+  }, {
+    "url": "assets/AdminScreen-DvdajPHi.js",
     "revision": null
   }, {
     "url": "apple-touch-icon.png",
