@@ -550,9 +550,27 @@ function handleError(op: OutboxOp, error: { message?: string; code?: string }): 
     void supabase.auth.refreshSession()
     return 'retry'
   }
-  s.toast({ text: `Couldn't save that change: ${error.message ?? 'unknown error'}`, tone: 'error' })
+  // Keep it on the phone so nothing is lost; it's tried again on the next open, or now.
+  const tries = (op.tries ?? 0) + 1
+  void db.failed.add({ ...op, seq: undefined, tries })
+  if (tries <= 2)
+    s.toast({
+    text: 'One change couldn’t be saved yet. It’s kept on this phone and will be tried again.',
+    tone: 'error',
+    action: { label: 'Try now', run: () => void retryFailed() },
+  })
   void refresh()
   return 'done'
+}
+
+/** Put refused changes back in the queue (in their order) and send them again. */
+export async function retryFailed(): Promise<void> {
+  const ops = await db.failed.orderBy('seq').toArray()
+  if (!ops.length) return
+  await db.failed.clear()
+  for (const op of ops) await db.outbox.add({ ...op, seq: undefined })
+  await updatePending()
+  void flush()
 }
 
 async function onEditConflict(op: OutboxOp) {
@@ -565,6 +583,8 @@ async function onEditConflict(op: OutboxOp) {
 }
 
 export function watchConnectivity() {
+  // Changes refused last time get one more go each time the app opens.
+  void retryFailed()
   window.addEventListener('online', () => {
     getState().set({ online: true })
     void flush()

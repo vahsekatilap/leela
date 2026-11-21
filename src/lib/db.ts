@@ -14,6 +14,8 @@ export interface OutboxOp {
   fn?: RpcName
   args?: Record<string, unknown>
   createdAt: number
+  /** How many times the server has refused it. */
+  tries?: number
 }
 
 export interface CacheRow {
@@ -24,10 +26,13 @@ export interface CacheRow {
 class LeelaDB extends Dexie {
   outbox!: Table<OutboxOp, number>
   cache!: Table<CacheRow, string>
+  /** Changes the server refused, kept so nothing is lost; tried again on the next open. */
+  failed!: Table<OutboxOp, number>
 
   constructor() {
     super('leela')
     this.version(1).stores({ outbox: '++seq, rowId', cache: 'key' })
+    this.version(2).stores({ outbox: '++seq, rowId', cache: 'key', failed: '++seq, rowId' })
   }
 }
 
