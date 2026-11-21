@@ -103,6 +103,8 @@ export function AlertSettings() {
           <Toggle label="How the week went (Sunday morning)" checked={a.weekly} onChange={(v) => void saveAlerts({ weekly: v })} />
           <Toggle label="Time to pump" checked={a.pump} onChange={(v) => void saveAlerts({ pump: v })} tone="pump" />
           <Toggle label="Fridge milk close to 4 days" checked={a.stash} onChange={(v) => void saveAlerts({ stash: v })} tone="pump" />
+          <Toggle label="Gentle nudges for her usual day (bath, massage, feeds, bottles, meals)" checked={a.routine} onChange={(v) => void saveAlerts({ routine: v })} />
+          <Toggle label="Important things (only for a real miss)" checked={a.important} onChange={(v) => void saveAlerts({ important: v })} tone="feed" />
           <Toggle label="Evening summary of the day" checked={a.summary} onChange={(v) => void saveAlerts({ summary: v })} />
           {a.summary && (
             <div>

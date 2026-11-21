@@ -5,6 +5,7 @@ import { pumpPlan, readAlerts, stashText } from '../src/lib/alerts'
 import { pumpTarget, sitting, sittingPrompt } from '../src/lib/pumping'
 import { habits, late, notYet } from '../src/lib/routine'
 import { milkStash, stashExpiring } from '../src/lib/stash'
+import { feedNudge, nappyNudge, pumpLongGapNudge, pumpNudge, routineNudges, vitaminsNudge } from '../src/lib/nudges'
 
 const TZ = 'Asia/Kolkata'
 const at = (d: string, hhmm: string) => Date.parse(`2026-11-${d}T${hhmm}:00+05:30`)
@@ -104,6 +105,46 @@ const ev = (type: string, start: number, end: number | null, data: Record<string
   assert.deepEqual(notYet(hs).map((h) => h.key), ['bath'])
   assert.deepEqual(late(hs, at('21', '10:30'), TZ).map((h) => h.key), [])
   assert.deepEqual(late(hs, at('21', '11:30'), TZ).map((h) => h.key), ['bath'])
+}
+
+// ---------------------------------------------------------------- nudges: gentle words, Important for a real miss
+{
+  const events = []
+  for (let d = 14; d <= 20; d++) events.push(ev('activity', at(String(d), '10:00'), null, { kind: 'bath' }))
+  const gentle = routineNudges(events as never, 'c', 'Leela', at('21', '11:30'), TZ, '2026-11-21')
+  assert.equal(gentle.length, 1)
+  assert.equal(gentle[0].title, 'Bath time, whenever it suits')
+  assert.doesNotMatch(gentle[0].body, /\b(missed|late|forgot)\b/i)
+  // After an outing yesterday, the words say so.
+  events.push(ev('activity', at('20', '17:00'), at('20', '19:00'), { kind: 'outing', where: "Nani's house" }))
+  const soft = routineNudges(events as never, 'c', 'Leela', at('21', '11:30'), TZ, '2026-11-21')
+  assert.match(soft[0].body, /visit to Nani's house made for a full day/)
+
+  const pumps = []
+  for (let d = 10; d <= 20; d++) for (const h of ['07', '11', '15', '19']) pumps.push(ev('pump', at(String(d), `${h}:00`), at(String(d), `${h}:15`), { left_ml: 25, right_ml: 25 }))
+  const p = { side: 'left' as const, lastAt: at('20', '19:15'), everyMin: 225, dueAt: at('20', '23:00') }
+  const n = pumpNudge(p, [...pumps, ...events] as never, 'c', at('21', '06:00'), TZ, 25)
+  assert.match(n.body, /full day, so a longer stretch is only natural/)
+  assert.match(n.body, /averaging 200 ml a day/)
+  assert.match(n.body, /Best window: now until/)
+  assert.equal(pumpLongGapNudge(p, at('21', '06:00'), TZ), null) // before 7 am
+  assert.equal(pumpLongGapNudge(p, at('21', '08:00'), TZ)?.important, true)
+
+  const feed = { at: at('21', '12:00'), last: at('21', '09:00'), everyMin: 180, range: [at('21', '11:40'), at('21', '12:30')] as [number, number], basis: 'logs' }
+  assert.equal(feedNudge(feed, 120, 'Leela', [] as never, 'c', at('21', '12:45'), TZ), null)
+  assert.equal(feedNudge(feed, 120, 'Leela', [] as never, 'c', at('21', '13:10'), TZ)?.title, 'Maybe time for a feed')
+  assert.equal(feedNudge(feed, 120, 'Leela', [] as never, 'c', at('21', '13:45'), TZ)?.important, true)
+
+  const nappies = []
+  for (let d = 14; d <= 21; d++) for (const h of ['06', '09', '12', '15', '18', '21']) nappies.push(ev('diaper', at(String(d), `${h}:00`), null, { kind: 'wet' }))
+  const wet = nappies.filter((e) => Date.parse(e.started_at) <= at('21', '12:00'))
+  assert.equal(nappyNudge(wet as never, 'c', 'Leela', 120, at('21', '17:00'), TZ), null)
+  assert.equal(nappyNudge(wet as never, 'c', 'Leela', 120, at('21', '18:30'), TZ)?.important, true)
+  assert.equal(nappyNudge(wet.slice(-10) as never, 'c', 'Leela', 120, at('21', '18:30'), TZ), null) // not logged closely enough
+
+  assert.equal(vitaminsNudge('Leela', ['Vitamin D'], [], 'x')?.important, undefined)
+  assert.equal(vitaminsNudge('Leela', ['Vitamin D'], ['Vitamin D'], 'x')?.title, 'Important: Vitamin D')
+  assert.equal(vitaminsNudge('Leela', [], ['Vitamin D'], 'x'), null)
 }
 
 assert.equal(readAlerts({}).stash, true)

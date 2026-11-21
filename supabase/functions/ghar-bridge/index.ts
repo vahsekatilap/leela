@@ -72,7 +72,7 @@ const ACTIVITY_LABELS: Record<string, string> = { bath: 'Bath', massage: 'Massag
 function feedDetail(e: Row): string {
   const d = e.data ?? {}
   if (e.type === 'nursing') return 'Breast'
-  if (e.type === 'solids') return 'Solids'
+  if (e.type === 'solids') return e.data?.drink ? 'Water' : 'Solids'
   const ml = typeof d.amount_ml === 'number' ? ` ${d.amount_ml} ml` : ''
   return (d.contents === 'formula' ? 'Formula' : 'Bottle') + ml
 }
@@ -151,7 +151,7 @@ async function status(client: Row, link: Row, days: number) {
   const mine = list.filter((e) => e.child_id === link.child_id)
   const running = mine.find((e) => e.type === 'sleep' && e.timer_state && !e.ended_at)
   const lastSleep = mine.find((e) => e.type === 'sleep')
-  const lastFeed = mine.find((e) => FEEDS.has(e.type))
+  const lastFeed = mine.find((e) => FEEDS.has(e.type) && !e.data?.drink)
   const lastNappy = mine.find((e) => e.type === 'diaper')
   let ss: Row | null = null
   try {

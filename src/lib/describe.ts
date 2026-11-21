@@ -18,6 +18,8 @@ export function eventTitle(e: LeelaEvent, family: Family | null): string {
       return MILESTONE_KINDS.find((k) => k.id === e.data.kind)?.label ?? e.data.label ?? 'Milestone'
     case 'medicine':
       return e.data.supplement && e.data.name ? e.data.name : 'Medicine'
+    case 'solids':
+      return e.data.drink ? 'Water' : TYPES.solids.label
     case 'symptom':
       return e.data.kind === 'visit' ? 'Doctor visit' : e.data.kind === 'vaccine' ? 'Vaccine' : 'Symptoms'
     default:
@@ -108,6 +110,10 @@ export function eventDetail(
       break
     }
     case 'solids': {
+      if (d.drink) {
+        parts.push(d.amount_ml ? `${d.amount_ml} ml` : 'a few sips')
+        break
+      }
       const foods = (d.foods ?? []).map((f) => f.name).filter(Boolean)
       if (foods.length) parts.push(foods.join(', '))
       if (d.reaction) parts.push(d.reaction === 'liked' ? 'loved it' : d.reaction === 'disliked' ? 'not a fan' : 'okay')

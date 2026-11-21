@@ -144,7 +144,7 @@ export function totalsFor(
         t.bottleMl += e.data.amount_ml ?? 0
         break
       case 'solids':
-        t.solids += 1
+        if (!e.data.drink) t.solids += 1
         break
       case 'diaper': {
         t.diapers += 1
@@ -172,7 +172,7 @@ export function totalsFor(
 export function lastOf(events: LeelaEvent[], childId: string | null, types: string[]): LeelaEvent | undefined {
   let best: LeelaEvent | undefined
   for (const e of events) {
-    if (e.deleted_at || !types.includes(e.type)) continue
+    if (e.deleted_at || !types.includes(e.type) || (e.type === 'solids' && e.data.drink)) continue
     if (childId && e.child_id && e.child_id !== childId) continue
     if (!best || e.started_at > best.started_at) best = e
   }

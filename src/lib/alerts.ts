@@ -37,15 +37,19 @@ export interface AlertPrefs {
   weekly: boolean
   /** When pumped milk in the fridge is close to its 4 days. */
   stash: boolean
+  /** When something the baby usually has by now (bath, massage, a usual bottle or meal) hasn't happened. */
+  routine: boolean
+  /** Important: a real miss (no wet nappy for hours, a very long stretch without a feed…). */
+  important: boolean
 }
 
-export const DEFAULT_ALERTS: AlertPrefs = { sweetspot: true, medicine: true, vaccines: true, summary: true, summaryAt: '20:30', pump: false, vitamins: true, weekly: true, stash: true }
+export const DEFAULT_ALERTS: AlertPrefs = { sweetspot: true, medicine: true, vaccines: true, summary: true, summaryAt: '20:30', pump: false, vitamins: true, weekly: true, stash: true, routine: true, important: true }
 
 export function readAlerts(prefs: object | null | undefined): AlertPrefs {
   const a = ((prefs as { alerts?: unknown } | null | undefined)?.alerts ?? {}) as Record<string, unknown>
   const flag = (k: keyof AlertPrefs) => (typeof a[k] === 'boolean' ? (a[k] as boolean) : (DEFAULT_ALERTS[k] as boolean))
   const at = typeof a.summaryAt === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(a.summaryAt) ? a.summaryAt : DEFAULT_ALERTS.summaryAt
-  return { sweetspot: flag('sweetspot'), medicine: flag('medicine'), vaccines: flag('vaccines'), summary: flag('summary'), summaryAt: at, pump: flag('pump'), vitamins: flag('vitamins'), weekly: flag('weekly'), stash: flag('stash') }
+  return { sweetspot: flag('sweetspot'), medicine: flag('medicine'), vaccines: flag('vaccines'), summary: flag('summary'), summaryAt: at, pump: flag('pump'), vitamins: flag('vitamins'), weekly: flag('weekly'), stash: flag('stash'), routine: flag('routine'), important: flag('important') }
 }
 
 /** Hours between doses that a medicine reminder can be set to. */
@@ -348,7 +352,7 @@ export function dayCounts(events: Ev[], childId: string, from: number, to: numbe
       c.feeds++
       c.bottles++
       if (typeof e.data.amount_ml === 'number') c.bottleMl += e.data.amount_ml
-    } else if (e.type === 'solids') {
+    } else if (e.type === 'solids' && !e.data?.drink) {
       c.feeds++
       c.solids++
     } else if (e.type === 'diaper') {
@@ -439,3 +443,5 @@ export function summaryText(name: string, c: DayCounts): { title: string; body: 
   if (c.meds) bits.push(plural(c.meds, 'medicine dose'))
   return { title: `${name}’s day so far`, body: `${bits.join(' · ')}.` }
 }
+
+export { ACTIVITY_NAMES, dayContext, feedNudge, fridgePastNudge, nappyNudge, pumpLongGapNudge, pumpNudge, routineNudges, vitaminsNudge, type Nudge } from './nudges'

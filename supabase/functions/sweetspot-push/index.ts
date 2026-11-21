@@ -4,6 +4,8 @@
 // - Medicine: when the next dose of a medicine logged with "remind me" is due.
 // - Vaccines: two days before and on the day a vaccine visit is due.
 // - Summary: the day so far, once every evening at the time each person chose.
+// - Time to pump, fridge milk close to 4 days, vitamins not given, the week on Sundays, and
+//   "running late": usual activities, bottles, meals and feeds that haven't happened yet.
 // Medicine, vaccine and summary code is shared with the app too (alerts.js is built from
 // src/lib/alerts.ts). Each person chooses which of these they get (profiles.prefs.alerts); they go
 // to every phone where that person turned notifications on. Each one goes out once per phone
@@ -11,7 +13,7 @@
 // (action "test"). Deploy with verify_jwt = false: this function checks the secret or the user.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { sweetSpot } from './sweetspot.js'
-import { clockText, dayCounts, stashExpiring, stashText, localDay, localMidnight, localMinute, medicinesDue, pumpDue, expectedMl, hoursText, vitaminsLeft, vitaminText, weekText, readAlerts, summaryText, vaccinePlan, vaccineReminder } from './alerts.js'
+import { clockText, dayCounts, stashExpiring, stashText, localDay, localMidnight, localMinute, medicinesDue, pumpDue, expectedMl, hoursText, routineNudges, feedNudge, fridgePastNudge, nappyNudge, pumpLongGapNudge, pumpNudge, vitaminsNudge, vitaminsLeft, weekText, readAlerts, summaryText, vaccinePlan, vaccineReminder } from './alerts.js'
 import { sendPush, type Vapid } from './webpush.ts'
 
 const DAY = 86_400_000
@@ -224,30 +226,31 @@ async function others(admin: Db, vapid: Vapid, now: number, subs: Sub[], member:
   ])
   const events = (recent ?? []) as Row[]
   let sent = 0
-  const send = async (sub: Sub, kid: Row, slot: string, message: Row) => {
-    if (!(await claim(admin, sub, kid.id, slot))) return
+  const send = async (sub: Sub, kid: Row, slot: string, message: Row): Promise<boolean> => {
+    if (!(await claim(admin, sub, kid.id, slot))) return false
     const status = await deliver(admin, sub, { ...message, url: appUrl(sub) }, vapid)
     await admin.from('push_sent').update({ status }).match({ subscription_id: sub.id, child_id: kid.id, slot })
     if (status >= 200 && status < 300) sent++
+    return true
   }
 
-  // Time to pump: once per emptying, from when it's due, for up to 2 hours.
+  // Time to pump: once per emptying, from when it's due, for up to 2 hours; Important when a breast
+  // has gone 8 hours or more.
   for (const fam of families) {
     const kid = kids.find((k) => k.family_id === fam.id)
     const phones = subs.filter((s) => s.family_id === fam.id && member.has(`${s.family_id}/${s.user_id}`) && want(s).pump)
     if (!kid || !phones.length) continue
     const tz = fam.timezone || 'UTC'
-    const p = pumpDue(((emptying ?? []) as Row[]).filter((e) => e.family_id === fam.id) as never, now, tz)
-    if (!p || now < p.dueAt || now >= p.dueAt + 2 * H) continue
-    const ml = expectedMl(((emptying ?? []) as Row[]).filter((e) => e.family_id === fam.id) as never, p.side, now, tz, now)
-    for (const sub of phones) {
-      await send(sub, kid, `pump/${p.side}/${p.lastAt}`, {
-        title: p.other ? `Time to pump: ${p.side} side` : 'Time to pump',
-        body: `${p.other ? `${p.side === 'left' ? 'Left' : 'Right'} side last` : 'Last'} emptied ${clockText(p.lastAt, tz)} (${p.lastKind === 'pump' ? 'pumping' : 'breastfeed'}), ${hoursText(now - p.lastAt)} ago.${ml ? ` This time usually gives about ${ml} ml.` : ''}`,
-        tag: `pump-${fam.id}`,
-        open: 'pumping',
-      })
+    const famEvents = ((emptying ?? []) as Row[]).filter((e) => e.family_id === fam.id)
+    const p = pumpDue(famEvents as never, now, tz)
+    if (!p) continue
+    if (now >= p.dueAt && now < p.dueAt + 2 * H) {
+      const ml = expectedMl(famEvents as never, p.side, now, tz, now)
+      const n = pumpNudge(p, [...famEvents, ...events.filter((e) => e.child_id === kid.id)] as never, kid.id, now, tz, ml)
+      for (const sub of phones) await send(sub, kid, n.slot, { title: n.title, body: n.body, tag: `pump-${fam.id}`, open: 'pumping' })
     }
+    const imp = pumpLongGapNudge(p, now, tz)
+    if (imp) for (const sub of phones) if (want(sub).important) await send(sub, kid, imp.slot, { title: imp.title, body: imp.body, tag: `important-${fam.id}`, open: 'pumping' })
   }
 
   // Fridge milk: once per bottle, from 12 hours before it reaches 4 days (not at night).
@@ -257,8 +260,12 @@ async function others(admin: Db, vapid: Vapid, now: number, subs: Sub[], member:
     const hour = Math.floor(localMinute(now, tz) / 60)
     const phones = subs.filter((s) => s.family_id === fam.id && member.has(`${s.family_id}/${s.user_id}`) && want(s).stash)
     if (!kid || !phones.length || hour < 8 || hour >= 22) continue
-    for (const lot of stashExpiring(((emptying ?? []) as Row[]).filter((e) => e.family_id === fam.id) as never, now)) {
+    const famEvents = ((emptying ?? []) as Row[]).filter((e) => e.family_id === fam.id)
+    for (const lot of stashExpiring(famEvents as never, now)) {
       for (const sub of phones) await send(sub, kid, `stash/${lot.id}`, { ...stashText(lot, tz), tag: `stash-${fam.id}`, open: 'pumping' })
+    }
+    for (const n of fridgePastNudge(famEvents as never, now, tz)) {
+      for (const sub of phones) if (want(sub).important) await send(sub, kid, n.slot, { title: n.title, body: n.body, tag: `important-${fam.id}`, open: 'pumping' })
     }
   }
 
@@ -299,12 +306,59 @@ async function others(admin: Db, vapid: Vapid, now: number, subs: Sub[], member:
 
     // Vitamins: from 7 in the evening, if one on the baby's list hasn't been given today.
     if (minute >= 19 * 60 && minute < 21 * 60) {
-      const left = vitaminsLeft(kid.settings, mine as never, kid.id, localMidnight(now, tz), now)
-      if (left.length) {
-        const t = vitaminText(kid.name, left)
+      const midnight = localMidnight(now, tz)
+      const left = vitaminsLeft(kid.settings, mine as never, kid.id, midnight, now)
+      const yesterday = vitaminsLeft(kid.settings, mine as never, kid.id, localMidnight(midnight - 12 * H, tz), midnight)
+      const n = vitaminsNudge(kid.name, left, yesterday, today)
+      if (n) {
         for (const sub of phones) {
-          if (!want(sub).vitamins) continue
-          await send(sub, kid, `vit/${today}`, { ...t, tag: `vitamins-${kid.id}`, open: 'today' })
+          if (!(n.important ? want(sub).important || want(sub).vitamins : want(sub).vitamins)) continue
+          await send(sub, kid, n.slot, { title: n.title, body: n.body, tag: `vitamins-${kid.id}`, open: 'today' })
+        }
+      }
+    }
+
+    // The day's rhythm, looked at every 5 minutes, 7 am to 10 pm, never while she sleeps, to both
+    // parents. Gentle ones (a usual activity, bottle, meal or feed running late) at most 3 a day
+    // on each phone; Important ones (a very long stretch without a feed, no wet nappy for hours)
+    // whenever they happen, once each.
+    if (minute >= 7 * 60 && minute < 22 * 60 && minute % 5 === 0 && phones.some((s) => want(s).routine || want(s).important)) {
+      const { data: week } = await admin
+        .from('events')
+        .select('id, family_id, child_id, type, started_at, ended_at, timer_state, data, deleted_at')
+        .eq('child_id', kid.id)
+        .is('deleted_at', null)
+        .gte('started_at', new Date(now - 8 * DAY).toISOString())
+        .order('started_at')
+        .limit(5000)
+      const wk = (week ?? []) as Row[]
+      if (!wk.some((e) => e.type === 'sleep' && e.timer_state)) {
+        const gentle = minute >= 8 * 60 && minute < 21 * 60 + 30 ? routineNudges(wk as never, kid.id, kid.name, now, tz, today) : []
+        const important: typeof gentle = []
+        const spot = sweetSpot(wk as never, kid as never, fam as never, now)
+        if (spot.feed && (spot.status === 'ok' || spot.status === 'newborn')) {
+          const f = feedNudge(spot.feed as never, spot.ageDays, kid.name, wk as never, kid.id, now, tz)
+          if (f?.important) important.push(f)
+          else if (f && minute >= 8 * 60 && minute < 21 * 60 + 30) gentle.unshift(f)
+        }
+        const nappy = nappyNudge(wk as never, kid.id, kid.name, spot.ageDays, now, tz)
+        if (nappy) important.push(nappy)
+        for (const sub of phones) {
+          const w = want(sub)
+          if (w.important) for (const n of important) await send(sub, kid, n.slot, { title: n.title, body: n.body, tag: `important-${kid.id}`, open: 'today' })
+          if (!w.routine || !gentle.length) continue
+          const { count } = await admin
+            .from('push_sent')
+            .select('slot', { count: 'exact', head: true })
+            .eq('subscription_id', sub.id)
+            .eq('child_id', kid.id)
+            .like('slot', 'late/%')
+            .gte('sent_at', new Date(localMidnight(now, tz)).toISOString())
+          let left = 3 - (count ?? 0)
+          for (const n of gentle) {
+            if (left <= 0) break
+            if (await send(sub, kid, n.slot, { title: n.title, body: n.body, tag: `late-${kid.id}`, open: 'today' })) left--
+          }
         }
       }
     }

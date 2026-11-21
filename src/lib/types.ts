@@ -40,7 +40,8 @@ export interface EventData {
   stash?: 'fridge' | 'freezer' | 'fed' | 'fresh'
   /** Pumping: the stored milk was used up or thrown away at this time. */
   stash_gone_at?: string
-  // solids
+  // solids (and drinks: `drink` = 'water', with amount_ml, from 6 months)
+  drink?: 'water'
   foods?: { name: string; first?: boolean; allergen?: boolean }[]
   eaten?: 'taste' | 'some' | 'most' | 'all'
   reaction?: 'liked' | 'neutral' | 'disliked'

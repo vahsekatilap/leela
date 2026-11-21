@@ -86,3 +86,50 @@ export const clockOf = (minute: number) => {
   return `${((h + 11) % 12) + 1}:${String(minute % 60).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
 }
 
+
+export interface UsualTime {
+  /** Usual minute after midnight. */
+  minute: number
+  /** Days in the last 7 with one near this time. */
+  days: number
+  doneToday: boolean
+  /** The latest one today, if any. */
+  lastToday: number | null
+}
+
+/**
+ * Things that happen several times a day (bottles, meals): the times of day they usually happen,
+ * found by three-hour block, and whether today's has happened (one within 2 hours of the usual time).
+ */
+export function usualTimes(events: Ev[], childId: string, match: (e: Ev) => boolean, now: number, timeZone: string): UsualTime[] {
+  const today = parts(now, timeZone).key
+  const byBlock = new Map<number, Map<string, number[]>>()
+  const todays: number[] = []
+  let lastToday: number | null = null
+  for (const e of events) {
+    if (e.deleted_at || e.child_id !== childId || !match(e)) continue
+    const t = Date.parse(e.started_at)
+    if (t > now || t < now - 8 * DAY) continue
+    const p = parts(t, timeZone)
+    if (p.key === today) {
+      todays.push(p.minute)
+      lastToday = Math.max(lastToday ?? 0, t)
+      continue
+    }
+    if (t < now - 7 * DAY - 12 * H) continue
+    const b = Math.floor(p.minute / 180)
+    const days = byBlock.get(b) ?? new Map<string, number[]>()
+    days.set(p.key, [...(days.get(p.key) ?? []), p.minute])
+    byBlock.set(b, days)
+  }
+  const out: UsualTime[] = []
+  for (const [, days] of byBlock) {
+    if (days.size < 4) continue
+    const mins = [...days.values()].map((xs) => xs[0]).sort((a, b) => a - b)
+    const minute = mins[Math.floor(mins.length / 2)]
+    out.push({ minute, days: days.size, doneToday: todays.some((m) => Math.abs(m - minute) <= 120), lastToday })
+  }
+  return out.sort((a, b) => a.minute - b.minute)
+}
+
+export const minuteNow = (now: number, timeZone: string) => parts(now, timeZone).minute

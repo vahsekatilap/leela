@@ -154,6 +154,7 @@ export function dayAggs(events: LeelaEvent[], segments: TimerSegment[], childId:
           if (e.data.contents === 'formula' || e.data.contents === 'mixed') d.bottleFormula++
           break
         case 'solids':
+          if (e.data.drink) break
           d.solidsN++
           for (const f of e.data.foods ?? []) {
             d.foods.push(f.name)

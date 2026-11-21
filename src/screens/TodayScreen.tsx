@@ -11,6 +11,7 @@ import { TimerCard } from '../components/TimerCard'
 import { Timeline } from '../components/Timeline'
 import { ChildSheet } from '../components/ChildSheet'
 import { HealthCards } from '../components/HealthCards'
+import { NudgeCards } from '../components/Nudges'
 import { VitaminsSheet } from '../components/Vitamins'
 import { useNow } from '../hooks/useNow'
 import { showsFor } from '../lib/config'
@@ -136,7 +137,7 @@ export function TodayScreen() {
         ? `${activityName(lastActivity)} ${agoText(lastActivity.started_at, now)}`
         : 'Bath, massage, play…'
   const activityDone = doneToday.length > 0 && missing.length === 0
-  const lastMeal = latest((e) => e.type === 'solids')
+  const lastMeal = latest((e) => e.type === 'solids' && !e.data.drink)
   const sixMonths = child.birth_date ? addMonths(child.birth_date, 6) : null
   const solidsSub = lastMeal
     ? agoText(lastMeal.started_at, now)
@@ -281,6 +282,15 @@ export function TodayScreen() {
       )}
 
       <SweetSpotCard spot={spot} child={child} now={now} tz={tz} onOpen={() => setSpotOpen(true)} onLogSleep={() => setSheet({ type: 'sleep' })} />
+
+      <NudgeCards
+        events={events}
+        child={child}
+        spot={spot}
+        now={now}
+        tz={tz}
+        onAct={(a) => (a === 'solids' ? set({ overlay: { kind: 'solids' } }) : setSheet(a.type === 'activity' ? { type: 'activity', preset: a.kind ? { kind: a.kind } : undefined } : a.type === 'nursing' ? { type: 'nursing', group: ['nursing', 'bottle', 'solids'] } : { type: a.type }))}
+      />
 
       <HealthCards
         child={child}
