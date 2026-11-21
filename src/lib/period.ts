@@ -3,7 +3,10 @@
 import { TZDate } from '@date-fns/tz'
 import { addDaysTz, dayStart, daysBetween, fmtShortDate } from './time'
 
-export type PeriodKind = 'day' | 'week' | 'month' | 'all' | 'custom'
+export type PeriodKind = 'day' | 'week' | 'fortnight' | 'days30' | 'days90' | 'month' | 'all' | 'custom'
+
+/** Rolling periods: the last n days, ending on the day picked (today unless moved). */
+export const ROLLING: Partial<Record<PeriodKind, number>> = { week: 7, fortnight: 14, days30: 30, days90: 90 }
 
 export interface Period {
   kind: PeriodKind
@@ -46,7 +49,10 @@ export function makePeriod(kind: PeriodKind, anchor: number, tz: string, start: 
     case 'day':
       return { kind, from: day, to: addDaysTz(day, 1, tz).getTime() }
     case 'week':
-      return { kind, from: addDaysTz(day, -6, tz).getTime(), to: addDaysTz(day, 1, tz).getTime() }
+    case 'fortnight':
+    case 'days30':
+    case 'days90':
+      return { kind, from: addDaysTz(day, 1 - ROLLING[kind]!, tz).getTime(), to: addDaysTz(day, 1, tz).getTime() }
     case 'month': {
       const d = new TZDate(day, tz)
       const from = new TZDate(d.getFullYear(), d.getMonth(), 1, tz).getTime()
@@ -70,7 +76,6 @@ export function shiftPeriod(p: Period, dir: -1 | 1, tz: string, now: number): Pe
   const today = startOf(now, tz)
   let next: Period
   if (p.kind === 'day') next = { ...p, from: addDaysTz(p.from, dir, tz).getTime(), to: addDaysTz(p.to, dir, tz).getTime() }
-  else if (p.kind === 'week') next = { ...p, from: addDaysTz(p.from, 7 * dir, tz).getTime(), to: addDaysTz(p.to, 7 * dir, tz).getTime() }
   else if (p.kind === 'month') {
     const d = new TZDate(p.from, tz)
     const from = new TZDate(d.getFullYear(), d.getMonth() + dir, 1, tz).getTime()
@@ -170,7 +175,7 @@ export function periodLabel(p: Period, tz: string, now: number, opts: { birth?: 
     return `${monthName(d)}${d.getFullYear() === new TZDate(now, tz).getFullYear() ? '' : ` ${d.getFullYear()}`}`
   }
   if (p.kind === 'all') return opts.birth ? 'Since birth' : 'Everything'
-  if (p.kind === 'week' && last === today) return 'Last 7 days'
+  if (ROLLING[p.kind] && last === today) return `Last ${ROLLING[p.kind]} days`
   return rangeText(p.from, last, tz)
 }
 

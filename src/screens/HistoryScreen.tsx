@@ -4,29 +4,22 @@ import { LogSheet } from '../components/LogSheet'
 import { MoreSheet } from '../components/MoreSheet'
 import { Sheet } from '../components/Sheet'
 import { Timeline } from '../components/Timeline'
-import { DayStrip } from '../components/charts/DayStrip'
-import { Swatch, WeekChart } from '../components/charts/WeekChart'
-import { columnSummary } from '../components/charts/chartUtils'
 import { CategoryRow, Panel } from '../components/history/bits'
 import { PeriodBar } from '../components/history/PeriodBar'
 import { useNow } from '../hooks/useNow'
-import { marksBetween, weekColumns, type Filter } from '../lib/charts'
 import { showsFor } from '../lib/config'
 import { eventTitle } from '../lib/describe'
-import { GROUPS, byBucket, bucketValue, categoriesFor, change, dayAggs, headline, type Category, type DayAgg, type Headline } from '../lib/insights'
-import { bucketsOf, daysOf, firstDay, makePeriod, previousPeriod, type Period } from '../lib/period'
+import { GROUPS, categoriesFor, change, dayAggs, headline, type Category, type DayAgg, type Headline } from '../lib/insights'
+import { daysOf, firstDay, makePeriod, previousPeriod, type Period } from '../lib/period'
 import { activeChild, useLeela } from '../lib/store'
 import { loadAllHistory } from '../lib/sync'
-import { atLocalTime, dayKey, durationText, fmtShortDate } from '../lib/time'
+import { atLocalTime, dayKey, fmtShortDate } from '../lib/time'
 import type { EventType, Family, LeelaEvent, TimerSegment } from '../lib/types'
 import { fmtWeight } from '../lib/units'
 import { HistoryDetail } from './HistoryDetail'
 import { HistorySearch } from './HistorySearch'
 
 const DAY = 86_400_000
-const ALL_FILTERS = new Set<Filter>(['sleep', 'feed', 'diaper', 'health', 'other'])
-// Where History was left, for coming back to the tab.
-let remembered: Period | null = null
 
 export function HistoryScreen() {
   const now = useNow(60_000)
@@ -44,16 +37,8 @@ export function HistoryScreen() {
   const firstEntry = useMemo(() => events.reduce<number | null>((m, e) => (e.child_id === child?.id || !e.child_id ? Math.min(m ?? Infinity, Date.parse(e.started_at)) : m), null), [events, child?.id])
   const start = firstDay(child?.birth_date, firstEntry, tz, now)
 
-  const [period, setPeriodState] = useState<Period>(() => remembered ?? makePeriod(askedView, Date.now(), tz, start, Date.now()))
-  const setPeriod = (p: Period) => {
-    remembered = p
-    setPeriodState(p)
-  }
-  // "Charts" on Today asks for the week.
-  useEffect(() => {
-    if (askedView !== 'day' && remembered === null) setPeriod(makePeriod(askedView, Date.now(), tz, start, Date.now()))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [askedView])
+  // History opens on today's day view.
+  const [period, setPeriod] = useState<Period>(() => makePeriod(askedView, Date.now(), tz, start, Date.now()))
 
   const [detail, setDetail] = useState<{ id: string; period: Period } | null>(null)
   const [searching, setSearching] = useState(false)
@@ -130,7 +115,6 @@ export function HistoryScreen() {
           family={family}
           now={now}
           onOpenCategory={(id) => setDetail({ id, period })}
-          onOpenDay={openDay}
         />
       )}
 
@@ -223,20 +207,20 @@ function DayView({
           (e.type === 'sleep' && Date.parse(e.started_at) < from && (e.ended_at ? Date.parse(e.ended_at) : now) > from)),
     )
     .sort((a, b) => b.started_at.localeCompare(a.started_at))
-  const d = ds[0]
 
   return (
     <section aria-label="The day">
-      <DayStrip
-        marks={marksBetween(events, segments, childId, userId, family, from, to, now)}
-        from={from}
-        to={to}
-        family={family}
-        now={now}
-        label={`${durationText(d.t.sleepMs)} of sleep, ${d.t.feeds} feeds and ${d.t.diapers} diapers, drawn from midnight to midnight.`}
-      />
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="font-display text-[20px] font-bold">Everything logged</h2>
+        <button type="button" onClick={onAdd} className="flex h-11 items-center gap-1.5 rounded-2xl bg-brand px-4 text-[15px] font-semibold text-brand-ink">
+          <Plus size={18} weight="bold" aria-hidden="true" /> Add
+        </button>
+      </div>
+      <Timeline events={list} now={now} onSelect={onOpenEntry} empty={`Nothing logged for ${childName} on this day. Forgot something? Add it here.`} />
       {cats.length > 0 && (
-        <ul className="mb-5 grid grid-cols-2 gap-2" aria-label="Totals for the day. Tap one to see it over the week.">
+        <>
+        <h2 className="mt-6 mb-2 font-display text-[20px] font-bold">The day in numbers</h2>
+        <ul className="mb-5 grid grid-cols-2 gap-2" aria-label="Totals for the day. Tap one for more.">
           {cats.map((c) => {
             const h = headline(c, ds)
             return (
@@ -255,14 +239,8 @@ function DayView({
             )
           })}
         </ul>
+        </>
       )}
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="font-display text-[20px] font-bold">Everything logged</h2>
-        <button type="button" onClick={onAdd} className="flex h-11 items-center gap-1.5 rounded-2xl bg-brand px-4 text-[15px] font-semibold text-brand-ink">
-          <Plus size={18} weight="bold" aria-hidden="true" /> Add
-        </button>
-      </div>
-      <Timeline events={list} now={now} onSelect={onOpenEntry} empty={`Nothing logged for ${childName} on this day. Forgot something? Add it here.`} />
     </section>
   )
 }
@@ -278,7 +256,6 @@ function Overview({
   family,
   now,
   onOpenCategory,
-  onOpenDay,
 }: {
   period: Period
   events: LeelaEvent[]
@@ -289,13 +266,10 @@ function Overview({
   family: Family
   now: number
   onOpenCategory: (id: string) => void
-  onOpenDay: (day: number) => void
 }) {
   const tz = family.timezone
   const days = useMemo(() => daysOf(period, tz, now), [period, tz, now])
   const ds = useMemo(() => dayAggs(events, segments, childId, userId, family, days, now), [events, segments, childId, userId, family, days, now])
-  const buckets = useMemo(() => bucketsOf(period, tz, now), [period, tz, now])
-  const per = useMemo(() => byBucket(ds, buckets), [ds, buckets])
   const comparable = period.kind !== 'all' && days.length <= 62
   const before = useMemo(() => {
     if (!comparable) return null
@@ -305,10 +279,6 @@ function Overview({
   const cats = useMemo(() => categoriesFor(events, childId, userId), [events, childId, userId])
   const inPeriod = cats.filter((c) => ds.some(c.has))
   const quiet = cats.filter((c) => !ds.some(c.has))
-  const columns = useMemo(
-    () => (period.kind === 'week' ? weekColumns(events, segments, childId, userId, family, days[days.length - 1], 7, family.night_end, now) : null),
-    [period.kind, events, segments, childId, userId, family, days, now],
-  )
 
   if (!days.length) return <p className="rounded-3xl bg-card-2 px-5 py-6 text-center text-[15px] text-ink-2">These dates haven’t happened yet.</p>
 
@@ -328,31 +298,6 @@ function Overview({
 
   return (
     <>
-      {columns && (
-        <Panel title="The week at a glance" aside={<span className="text-[13px] text-ink-3">Tap a day</span>}>
-          <div className="-mx-2">
-            <WeekChart columns={columns} family={family} now={now} startHHMM={family.night_end} show={ALL_FILTERS} summaries={columns.map(columnSummary)} onPickDay={onOpenDay} />
-          </div>
-          <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[12.5px] text-ink-2" aria-label="Key">
-            {(
-              [
-                ['night', 'Night'],
-                ['nap', 'Nap'],
-                ['feed', 'Feed'],
-                ['diaper', 'Diaper'],
-                ['health', 'Health'],
-                ['other', 'Other'],
-              ] as const
-            ).map(([k, l]) => (
-              <li key={k} className="flex items-center gap-1.5">
-                <Swatch kind={k} />
-                {l}
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      )}
-
       {days.length >= 14 && <Totals ds={ds} days={days.length} childName={childName} cats={inPeriod} />}
 
       {!inPeriod.length && <p className="mb-4 rounded-3xl bg-card-2 px-5 py-6 text-center text-[15px] text-ink-2">Nothing logged for {childName} in these dates.</p>}
@@ -371,7 +316,6 @@ function Overview({
                   key={c.id}
                   c={c}
                   h={special(c)}
-                  spark={buckets.length > 1 && (c.rate || c.group === 'care') ? per.map((p) => bucketValue(c, p)) : undefined}
                   delta={before ? change(c, ds, before) : null}
                   onOpen={() => onOpenCategory(c.id)}
                 />
@@ -386,7 +330,7 @@ function Overview({
           Nothing logged in these dates: {quiet.map((c) => c.label.toLowerCase()).join(', ')}.
         </p>
       )}
-      {before && <p className="mt-1 px-1 text-[13px] text-ink-3">The small figures compare with the {period.kind === 'month' ? 'month' : `${days.length} days`} before.</p>}
+      {before && <p className="mt-1 px-1 text-[13px] text-ink-3">The small figures compare with the {period.kind === 'month' ? 'month' : `${days.length} days`} before. Tap any row for its entries, and charts if you want them.</p>}
     </>
   )
 }

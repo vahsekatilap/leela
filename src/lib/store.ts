@@ -41,7 +41,7 @@ export interface LeelaState {
   catchUpDismissed: boolean
   tab: Tab
   /** How much History shows when it opens: a day, a week, a month or everything. */
-  historyView: 'day' | 'week' | 'month' | 'all'
+  historyView: 'day' | 'week' | 'fortnight' | 'days30' | 'days90' | 'all'
   toasts: Toast[]
   conflict: Conflict | null
   removedNotice: boolean
@@ -81,7 +81,7 @@ const initial = {
   catchUpSince: null,
   catchUpDismissed: false,
   tab: 'today' as Tab,
-  historyView: 'week' as 'day' | 'week' | 'month' | 'all',
+  historyView: 'day' as 'day' | 'week' | 'fortnight' | 'days30' | 'days90' | 'all',
   toasts: [],
   conflict: null,
   removedNotice: false,

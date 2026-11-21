@@ -8,7 +8,7 @@ import { GrowthCard } from '../components/charts/GrowthCard'
 import { LineChart } from '../components/charts/LineChart'
 import { WeekChart } from '../components/charts/WeekChart'
 import { columnSummary } from '../components/charts/chartUtils'
-import { HourChart, Panel, StatGrid } from '../components/history/bits'
+import { HourChart, Panel, Reveal, StatGrid } from '../components/history/bits'
 import { PeriodBar } from '../components/history/PeriodBar'
 import { weekColumns, type Filter } from '../lib/charts'
 import {
@@ -162,7 +162,7 @@ function Body({
 
   return (
     <>
-      <PeriodBar period={period} onChange={setPeriod} tz={tz} now={now} start={start} birth={child.birth_date} kinds={['week', 'month', 'all']} />
+      <PeriodBar period={period} onChange={setPeriod} tz={tz} now={now} start={start} birth={child.birth_date} kinds={['week', 'fortnight', 'days30', 'days90', 'all']} />
 
       {c.id === 'solids' && (
         <button type="button" onClick={() => useLeela.getState().set({ overlay: { kind: 'solids' } })} className="mb-4 flex min-h-12 w-full items-center justify-between rounded-2xl bg-[var(--feed-soft)] px-4 text-[16px] font-semibold">
@@ -194,12 +194,17 @@ function Body({
           {note && <p className="-mt-1 mb-4 rounded-2xl bg-card-2 px-4 py-3 text-[14px] leading-snug text-ink-2">{note}</p>}
 
           {c.id === 'growth' ? (
-            <GrowthCard child={child} events={events} now={now} who={false} />
+            <Reveal label="growth chart">
+              <GrowthCard child={child} events={events} now={now} who={false} />
+            </Reveal>
           ) : c.id === 'temperature' ? (
-            <TempPanel entries={entries} period={period} tz={tz} now={now} fahrenheit={tempUnit(prefs) === 'f'} />
+            <Reveal label="temperature chart">
+              <TempPanel entries={entries} period={period} tz={tz} now={now} fahrenheit={tempUnit(prefs) === 'f'} />
+            </Reveal>
           ) : (
             anyBars &&
             buckets.length > 1 && (
+              <Reveal label="bar chart">
               <Panel title={chartTitle(c, g)} aside={<span className="text-[13px] text-ink-3">{g === 'day' ? 'Tap twice to open a day' : 'Tap twice to zoom in'}</span>}>
                 <BarChart
                   label={chartTitle(c, g)}
@@ -223,10 +228,12 @@ function Body({
                   </ul>
                 )}
               </Panel>
+              </Reveal>
             )
           )}
 
           {c.id === 'feeds' && ds.some((d) => d.bottleMl > 0) && buckets.length > 1 && (
+            <Reveal label="bottle chart">
             <Panel title={g === 'day' ? 'Bottle, ml each day' : `Bottle, ml a day, by ${g}`}>
               <BarChart
                 label="Bottle millilitres"
@@ -239,20 +246,25 @@ function Body({
                 series={[{ key: 'ml', label: 'Bottle', color: 'var(--c-feed-2)', values: per.map((p) => avgOf(p.filter((d) => d.bottleN > 0).map((d) => d.bottleMl))) }]}
               />
             </Panel>
+            </Reveal>
           )}
 
           {sleepCols && sleepCols.length > 1 && (
+            <Reveal label="sleep pattern">
             <Panel title={`Pattern, last ${sleepCols.length} days`} aside={<span className="text-[13px] text-ink-3">Tap a day</span>}>
               <div className="-mx-2">
                 <WeekChart columns={sleepCols} family={family} now={now} startHHMM={family.night_end} show={SLEEP_ONLY} summaries={sleepCols.map(columnSummary)} onPickDay={onOpenDay} />
               </div>
             </Panel>
+            </Reveal>
           )}
 
           {timeline && (
-            <Panel title="When in the day">
-              <HourChart counts={hourCounts(entries.map((e) => Date.parse(e.started_at)), tz)} color={`var(--${c.tone})`} label={`When ${c.label.toLowerCase()} happens`} />
-            </Panel>
+            <Reveal label="time of day">
+              <Panel title="When in the day">
+                <HourChart counts={hourCounts(entries.map((e) => Date.parse(e.started_at)), tz)} color={`var(--${c.tone})`} label={`When ${c.label.toLowerCase()} happens`} />
+              </Panel>
+            </Reveal>
           )}
 
           {(c.id === 'vitamins' || c.id === 'medicine') && <NamesPanel entries={entries} tz={tz} lastDay={days[days.length - 1]} days={days.length} vitamins={c.id === 'vitamins'} />}

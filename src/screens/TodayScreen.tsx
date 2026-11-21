@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { ChartBar, Check, CloudSlash, DotsThreeOutline, Plus, X } from '@phosphor-icons/react'
+import { ClockCounterClockwise, Check, CloudSlash, DotsThreeOutline, Plus, X } from '@phosphor-icons/react'
 import { useMemo, useState } from 'react'
 import { DayRing } from '../components/DayRing'
 import { BottleIcon, DiaperIcon, TypeIcon, VitaminIcon } from '../components/Icon'
@@ -334,8 +334,8 @@ export function TodayScreen() {
             Today
           </h2>
           <span className="flex items-center gap-4">
-            <button type="button" onClick={() => set({ tab: 'history', historyView: 'week' })} className="flex items-center gap-1 text-[15px] font-semibold text-brand">
-              <ChartBar size={18} weight="bold" aria-hidden="true" /> Charts
+            <button type="button" onClick={() => set({ tab: 'history', historyView: 'day' })} className="flex items-center gap-1 text-[15px] font-semibold text-brand">
+              <ClockCounterClockwise size={18} weight="bold" aria-hidden="true" /> History
             </button>
             <button type="button" onClick={() => setMore(true)} className="flex items-center gap-1 text-[15px] font-semibold text-brand">
               <Plus size={18} weight="bold" aria-hidden="true" /> Add

@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
 import { toneSoft, toneVar } from '../../lib/config'
 import { hourRange, type Category, type Headline, type Stat } from '../../lib/insights'
@@ -104,5 +105,18 @@ export function Panel({ title, children, className, aside }: { title?: string; c
       )}
       {children}
     </section>
+  )
+}
+
+/** A chart kept out of the way: a small "Show … chart" line that opens it, and closes it again. */
+export function Reveal({ label, children }: { label: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="mb-2">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="min-h-10 px-1 text-[14px] font-semibold text-brand">
+        {open ? `Hide ${label}` : `Show ${label}`}
+      </button>
+      {open && <div className="mt-1">{children}</div>}
+    </div>
   )
 }
