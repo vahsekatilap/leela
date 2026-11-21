@@ -50,8 +50,12 @@ export interface RecordChange {
   end?: string
   data: EventData
   notes?: string
-  /** Every day from `from` to `until` (YYYY-MM-DD) at `time` (HH:MM) instead of once. */
-  repeat?: { from: string; until: string; time?: string }
+  /**
+   * Instead of once: every `every` days (1 = daily) from `from` to `until` (YYYY-MM-DD) at `time`
+   * (HH:MM). With `every` above 1, a day is left out when one is already logged within half the
+   * gap, so "about every third day" only fills in where nothing was logged.
+   */
+  repeat?: { from: string; until: string; time?: string; every?: number }
 }
 
 export interface Understood {
@@ -98,7 +102,10 @@ export function parseUnderstood(body: { records?: unknown[]; changes?: unknown[]
       end: isLocal(o.end) ? o.end : undefined,
       data: cleanData(type, o.data),
       notes: typeof o.notes === 'string' && o.notes.trim() ? o.notes.trim().slice(0, 500) : undefined,
-      repeat: rep && isDay(rep.from) && isDay(rep.until) ? { from: rep.from, until: rep.until, time: isTime(rep.time) ? rep.time : undefined } : undefined,
+      repeat:
+        rep && isDay(rep.from) && isDay(rep.until)
+          ? { from: rep.from, until: rep.until, time: isTime(rep.time) ? rep.time : undefined, every: Math.min(30, Math.max(1, Math.round(Number(rep.every) || 1))) }
+          : undefined,
     })
   }
   const courses: CourseChange[] = []
@@ -130,7 +137,8 @@ export function draftsOf(r: RecordChange, tz: string, now: number, words: string
   const time = r.repeat.time ?? r.start.slice(11, 16)
   const out: Draft[] = []
   const today = dayKey(now, tz)
-  for (let d = dayStart(`${r.repeat.from}T12:00:00`, tz).getTime(), n = 0; n < 800; d = addDaysTz(d, 1, tz).getTime(), n++) {
+  const step = r.repeat.every ?? 1
+  for (let d = dayStart(`${r.repeat.from}T12:00:00`, tz).getTime(), n = 0; n < 800; d = addDaysTz(d, step, tz).getTime(), n++) {
     const k = dayKey(d, tz)
     if (k > r.repeat.until || k > today) break
     const t = atLocalTime(`${k}T12:00:00`, time, tz).getTime()
@@ -142,7 +150,17 @@ export function draftsOf(r: RecordChange, tz: string, now: number, words: string
 
 /** All drafts for the changes picked, with ones already in LAPdiary left out. */
 export function planRecords(rs: RecordChange[], events: LeelaEvent[], childId: string, tz: string, words: string): { drafts: Draft[]; skipped: number } {
-  const all = rs.flatMap((r, i) => draftsOf(r, tz, Date.now(), words, i))
+  const all = rs.flatMap((r, i) => {
+    const ds = draftsOf(r, tz, Date.now(), words, i)
+    const every = r.repeat?.every ?? 1
+    if (every <= 1) return ds
+    // "About every third day": leave out days with one already logged within half the gap.
+    const same = events
+      .filter((e) => !e.deleted_at && e.type === r.type && (TYPES[r.type].familyLevel || e.child_id === childId) && (r.data.kind === undefined || e.data.kind === r.data.kind))
+      .map((e) => Date.parse(e.started_at))
+    const half = (every / 2) * 86_400_000
+    return ds.filter((d) => !same.some((t) => Math.abs(t - d.start) < half))
+  })
   const marked = markDuplicates(all, events, childId)
   return { drafts: marked.filter((d) => d.include), skipped: marked.filter((d) => !d.include).length }
 }

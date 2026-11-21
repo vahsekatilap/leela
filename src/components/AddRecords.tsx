@@ -22,6 +22,8 @@ const fmtLocal = (s: string) => {
   return `${fmtDay(d)}, ${((h + 11) % 12) + 1}:${String(mi).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
 }
 
+const ordinal = (n: number) => (n === 3 ? 'third' : n === 4 ? 'fourth' : n === 5 ? 'fifth' : `${n}th`)
+
 type Rec = { start: () => void; stop: () => void; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; lang: string; interimResults: boolean; continuous: boolean }
 type SpeechCtor = new () => Rec
 const speechCtor = (): SpeechCtor | undefined => {
@@ -65,11 +67,19 @@ export function AddRecords({ compact = false }: { compact?: boolean }) {
       rec.current?.stop()
       return
     }
+    // Speaking again after an answer starts afresh.
+    const fresh = Boolean(result || error)
+    if (fresh) {
+      setResult(null)
+      setError(null)
+      setDone({})
+    }
     const r = new Speech()
     r.lang = 'en-IN'
     r.interimResults = true
     r.continuous = true
-    base.current = text ? `${text.trim()} ` : ''
+    base.current = !fresh && text ? `${text.trim()} ` : ''
+    if (fresh) setText('')
     r.onresult = (e) => {
       let said = ''
       for (let i = 0; i < e.results.length; i++) said += e.results[i][0].transcript
@@ -147,6 +157,20 @@ export function AddRecords({ compact = false }: { compact?: boolean }) {
         )}
       </div>
       {listening && <p className="-mt-1 mb-3 px-1 text-[14px] font-semibold text-[var(--feed)]">Listening… tap the square when done.</p>}
+      {text && !listening && (
+        <button
+          type="button"
+          onClick={() => {
+            setText('')
+            setResult(null)
+            setError(null)
+            setDone({})
+          }}
+          className="-mt-1 mb-2 min-h-10 px-1 text-[15px] font-semibold text-brand"
+        >
+          Clear and start again
+        </button>
+      )}
       <Button className="mb-2 w-full" size={compact ? 'md' : undefined} onClick={() => void go()} disabled={busy || text.trim().length < 6}>
         <Sparkle size={20} weight="fill" className="mr-1.5 inline" aria-hidden="true" /> {busy ? 'Understanding…' : 'Show me what it adds'}
       </Button>
@@ -232,7 +256,7 @@ function RecordRow({ r, n, family, segments }: { r: RecordChange; n: number; fam
     deleted_at: null,
   } as LeelaEvent
   const detail = eventDetail(fake, segments, myPrefs(), Date.now(), { noLength: true })
-  const when = r.repeat ? `Every day, ${fmtDay(r.repeat.from)} – ${fmtDay(r.repeat.until)}${r.repeat.time ? ` at ${fmtLocal(`2000-01-01T${r.repeat.time}`).split(', ')[1]}` : ''}` : `${fmtLocal(r.start)}${r.end ? ` – ${fmtLocal(r.end).split(', ')[1]}` : ''}`
+  const when = r.repeat ? `${(r.repeat.every ?? 1) > 1 ? `About every ${r.repeat.every === 2 ? 'other' : ordinal(r.repeat.every!)} day where none is logged` : 'Every day'}, ${fmtDay(r.repeat.from)} – ${fmtDay(r.repeat.until)}${r.repeat.time ? ` at ${fmtLocal(`2000-01-01T${r.repeat.time}`).split(', ')[1]}` : ''}` : `${fmtLocal(r.start)}${r.end ? ` – ${fmtLocal(r.end).split(', ')[1]}` : ''}`
   return (
     <li className="flex items-start gap-3 rounded-2xl bg-card-2 px-3 py-2.5">
       <span className="mt-0.5 shrink-0" style={{ color: `var(--${TYPES[r.type].tone})` }}>
