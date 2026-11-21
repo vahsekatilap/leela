@@ -1,6 +1,7 @@
 import { ArrowLeft } from '@phosphor-icons/react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useId } from 'react'
+import { lockScroll } from '../lib/scrollLock'
 import { useBackToClose } from './Sheet'
 
 /** A full screen that slides over the app, for longer jobs like importing or writing a note. */
@@ -32,11 +33,7 @@ export function Overlay({
 
   useEffect(() => {
     if (!open) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
+    return lockScroll()
   }, [open])
 
   return (

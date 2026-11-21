@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from 'motion/react'
 import { type ReactNode, useEffect, useId, useRef } from 'react'
 import { X } from '@phosphor-icons/react'
+import { lockScroll } from '../lib/scrollLock'
 import { popLayer, pushLayer } from '../lib/backstack'
 
 /** Lets the phone's back button step out of this layer; `onBack` returns true to stay open. */
@@ -38,11 +39,10 @@ export function Sheet({
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const unlock = lockScroll()
     return () => {
       window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
+      unlock()
     }
   }, [open, onClose])
 
