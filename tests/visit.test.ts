@@ -28,7 +28,7 @@ assert.match(w.text, /6\.2 kg on 20 Nov, \+600 g in 19 days \(about 221 g a week
 assert.ok(b.changes.some((c) => c.label === 'Medicines' && /Calpol ×1/.test(c.text)))
 assert.ok(b.suggested.some((s) => /38\.3 °C/.test(s)))
 assert.ok(b.suggested.some((s) => /Vitamin D/.test(s)))
-assert.ok(b.changes.some((c) => c.label === 'Feeds' && /^5 a day/.test(c.text)))
+assert.ok(b.changes.some((c) => c.label === 'Feeds' && /^4\.7 a day/.test(c.text)))
 const text = visitText('Leela', b, [{ id: 'q', text: 'Is she on track?', answer: 'Yes' }], TZ, Date.parse(at('22', '10:00')))
 assert.match(text, /Since the last visit on 2 Nov/)
 assert.match(text, /→ Yes/)
