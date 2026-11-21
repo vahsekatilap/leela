@@ -1,11 +1,8 @@
-# Check of perf at 8613dfc
+# Check of perf at a6e4a8a
 ## Lint
 OK
 ```
-ctions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=2207,endColumn=2339,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:2207: Expected expression to be used
-::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=3149,endColumn=3197,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:3149: Expected expression to be used
-::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=3962,endColumn=3999,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:3962: Expected expression to be used
-::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=4352,endColumn=4417,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:4352: Expected expression to be used
+unctions/ghar-bridge/sweetspot.js:2:4352: Expected expression to be used
 ::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=4494,endColumn=4610,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:4494: Expected expression to be used
 ::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=4849,endColumn=4922,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:4849: Expected expression to be used
 ::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=5383,endColumn=5442,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:5383: Expected expression to be used
@@ -25,6 +22,7 @@ ctions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=2207,endColumn=2339,title=e
 ::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=13670,endColumn=13757,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:13670: Expected expression to be used
 ::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=13888,endColumn=13944,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:13888: Expected expression to be used
 ::warning file=supabase/functions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=14341,endColumn=14413,title=eslint(no-unused-expressions)::supabase/functions/ghar-bridge/sweetspot.js:2:14341: Expected expression to be used
+::warning file=src/lib/import/classify.ts,line=153,endLine=153,col=7,endColumn=8,title=eslint(no-unused-vars)::src/lib/import/classify.ts:153:7: Variable 's' is assigned a value but never used. Unused variables should start with a '_'.
 ::warning file=supabase/functions/sweetspot-push/alerts.js,line=2,endLine=2,col=3623,endColumn=3624,title=eslint(no-unused-vars)::supabase/functions/sweetspot-push/alerts.js:2:3623: Variable 'q' is declared but never used. Unused variables should start with a '_'.
 ::warning file=supabase/functions/sweetspot-push/alerts.js,line=2,endLine=2,col=4609,endColumn=4644,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/alerts.js:2:4609: Expected expression to be used
 ::warning file=supabase/functions/sweetspot-push/alerts.js,line=2,endLine=2,col=4949,endColumn=5019,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/alerts.js:2:4949: Expected expression to be used
@@ -43,6 +41,7 @@ ctions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=2207,endColumn=2339,title=e
 ::warning file=supabase/functions/sweetspot-push/alerts.js,line=2,endLine=2,col=11821,endColumn=11863,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/alerts.js:2:11821: Expected expression to be used
 ::warning file=supabase/functions/sweetspot-push/alerts.js,line=2,endLine=2,col=12557,endColumn=12727,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/alerts.js:2:12557: Expected expression to be used
 ::warning file=supabase/functions/sweetspot-push/alerts.js,line=2,endLine=2,col=12808,endColumn=12841,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/alerts.js:2:12808: Expected expression to be used
+::warning file=src/lib/import/files.ts,line=52,endLine=52,col=9,endColumn=15,title=eslint(no-control-regex)::src/lib/import/files.ts:52:9: Unexpected control characters
 ::warning file=supabase/functions/sweetspot-push/sweetspot.js,line=2,endLine=2,col=1890,endColumn=1917,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/sweetspot.js:2:1890: Expected expression to be used
 ::warning file=supabase/functions/sweetspot-push/sweetspot.js,line=2,endLine=2,col=2207,endColumn=2339,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/sweetspot.js:2:2207: Expected expression to be used
 ::warning file=supabase/functions/sweetspot-push/sweetspot.js,line=2,endLine=2,col=3149,endColumn=3197,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/sweetspot.js:2:3149: Expected expression to be used
@@ -67,42 +66,44 @@ ctions/ghar-bridge/sweetspot.js,line=2,endLine=2,col=2207,endColumn=2339,title=e
 ::warning file=supabase/functions/sweetspot-push/sweetspot.js,line=2,endLine=2,col=13670,endColumn=13757,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/sweetspot.js:2:13670: Expected expression to be used
 ::warning file=supabase/functions/sweetspot-push/sweetspot.js,line=2,endLine=2,col=13888,endColumn=13944,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/sweetspot.js:2:13888: Expected expression to be used
 ::warning file=supabase/functions/sweetspot-push/sweetspot.js,line=2,endLine=2,col=14341,endColumn=14413,title=eslint(no-unused-expressions)::supabase/functions/sweetspot-push/sweetspot.js:2:14341: Expected expression to be used
+::warning file=src/App.tsx,line=47,endLine=47,col=15,endColumn=22,title=react(set-state-in-effect)::src/App.tsx:47:15: Calling setState synchronously within an effect can trigger cascading renders
+::warning file=src/components/NoteEditor.tsx,line=236,endLine=236,col=52,endColumn=62,title=react(purity)::src/components/NoteEditor.tsx:236:52: Cannot call impure function during render
+::warning file=src/components/TimeField.tsx,line=159,endLine=159,col=15,endColumn=25,title=react(purity)::src/components/TimeField.tsx:159:15: Cannot call impure function during render
+::warning file=src/screens/OnboardingScreen.tsx,line=164,endLine=164,col=77,endColumn=87,title=react(purity)::src/screens/OnboardingScreen.tsx:164:77: Cannot call impure function during render
 ::warning file=src/components/AlertSettings.tsx,line=8,endLine=8,col=14,endColumn=26,title=react(only-export-components)::src/components/AlertSettings.tsx:8:14: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
 ::warning file=src/components/AlertSettings.tsx,line=15,endLine=15,col=17,endColumn=25,title=react(only-export-components)::src/components/AlertSettings.tsx:15:17: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
 ::warning file=src/components/AlertSettings.tsx,line=19,endLine=19,col=23,endColumn=33,title=react(only-export-components)::src/components/AlertSettings.tsx:19:23: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
-::warning file=src/components/TimeField.tsx,line=159,endLine=159,col=15,endColumn=25,title=react(purity)::src/components/TimeField.tsx:159:15: Cannot call impure function during render
+::warning file=src/components/SleepSheet.tsx,line=48,endLine=48,col=7,endColumn=14,title=react(set-state-in-effect)::src/components/SleepSheet.tsx:48:7: Calling setState synchronously within an effect can trigger cascading renders
+::warning file=src/screens/ReportScreen.tsx,line=222,endLine=222,col=46,endColumn=56,title=react(purity)::src/screens/ReportScreen.tsx:222:46: Cannot call impure function during render
 ::warning file=src/components/LogSheet.tsx,line=911,endLine=911,col=15,endColumn=25,title=react(purity)::src/components/LogSheet.tsx:911:15: Cannot call impure function during render
 ::warning file=src/components/LogSheet.tsx,line=1006,endLine=1006,col=72,endColumn=82,title=react(purity)::src/components/LogSheet.tsx:1006:72: Cannot call impure function during render
-::warning file=src/components/NoteEditor.tsx,line=236,endLine=236,col=52,endColumn=62,title=react(purity)::src/components/NoteEditor.tsx:236:52: Cannot call impure function during render
-::warning file=src/App.tsx,line=45,endLine=45,col=15,endColumn=22,title=react(set-state-in-effect)::src/App.tsx:45:15: Calling setState synchronously within an effect can trigger cascading renders
-::warning file=src/components/SleepSheet.tsx,line=48,endLine=48,col=7,endColumn=14,title=react(set-state-in-effect)::src/components/SleepSheet.tsx:48:7: Calling setState synchronously within an effect can trigger cascading renders
+::warning file=src/screens/BookScreen.tsx,line=186,endLine=186,col=77,endColumn=87,title=react(purity)::src/screens/BookScreen.tsx:186:77: Cannot call impure function during render
+::warning file=src/screens/BookScreen.tsx,line=38,endLine=38,col=5,endColumn=15,title=react(set-state-in-effect)::src/screens/BookScreen.tsx:38:5: Calling setState synchronously within an effect can trigger cascading renders
+::warning file=src/screens/ImportScreen.tsx,line=285,endLine=285,col=175,endColumn=185,title=react(purity)::src/screens/ImportScreen.tsx:285:175: Cannot call impure function during render
+::warning file=src/screens/ImportScreen.tsx,line=797,endLine=797,col=81,endColumn=91,title=react(purity)::src/screens/ImportScreen.tsx:797:81: Cannot call impure function during render
+::warning file=src/screens/ImportScreen.tsx,line=128,endLine=128,col=5,endColumn=12,title=react(set-state-in-effect)::src/screens/ImportScreen.tsx:128:5: Calling setState synchronously within an effect can trigger cascading renders
 ::warning file=src/components/ChildSheet.tsx,line=14,endLine=14,col=17,endColumn=27,title=react(purity)::src/components/ChildSheet.tsx:14:17: Cannot call impure function during render
 ::warning file=src/components/ChildSheet.tsx,line=18,endLine=18,col=5,endColumn=12,title=react(set-state-in-effect)::src/components/ChildSheet.tsx:18:5: Calling setState synchronously within an effect can trigger cascading renders
 ::warning file=src/components/Sheet.tsx,line=8,endLine=8,col=17,endColumn=31,title=react(only-export-components)::src/components/Sheet.tsx:8:17: Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
 ::warning file=src/components/Sheet.tsx,line=10,endLine=10,col=10,endColumn=18,title=react(refs)::src/components/Sheet.tsx:10:10: Cannot access refs during render
-::warning file=src/screens/ImportScreen.tsx,line=285,endLine=285,col=175,endColumn=185,title=react(purity)::src/screens/ImportScreen.tsx:285:175: Cannot call impure function during render
-::warning file=src/screens/ImportScreen.tsx,line=797,endLine=797,col=81,endColumn=91,title=react(purity)::src/screens/ImportScreen.tsx:797:81: Cannot call impure function during render
-::warning file=src/screens/ImportScreen.tsx,line=128,endLine=128,col=5,endColumn=12,title=react(set-state-in-effect)::src/screens/ImportScreen.tsx:128:5: Calling setState synchronously within an effect can trigger cascading renders
+::warning file=src/screens/PumpingScreen.tsx,line=21,endLine=21,col=15,endColumn=25,title=react(purity)::src/screens/PumpingScreen.tsx:21:15: Cannot call impure function during render
 ::warning file=src/screens/HistorySearch.tsx,line=45,endLine=45,col=17,endColumn=27,title=react(purity)::src/screens/HistorySearch.tsx:45:17: Cannot call impure function during render
 ::warning file=src/screens/HistorySearch.tsx,line=123,endLine=123,col=47,endColumn=57,title=react(purity)::src/screens/HistorySearch.tsx:123:47: Cannot call impure function during render
+::warning file=src/screens/DevelopmentScreen.tsx,line=24,endLine=24,col=67,endColumn=77,title=react(purity)::src/screens/DevelopmentScreen.tsx:24:67: Cannot call impure function during render
+::warning file=src/screens/DiaryScreen.tsx,line=31,endLine=31,col=15,endColumn=25,title=react(purity)::src/screens/DiaryScreen.tsx:31:15: Cannot call impure function during render
+::warning file=src/screens/DiaryScreen.tsx,line=145,endLine=145,col=72,endColumn=82,title=react(purity)::src/screens/DiaryScreen.tsx:145:72: Cannot call impure function during render
 ::warning file=src/screens/SolidsScreen.tsx,line=20,endLine=20,col=15,endColumn=25,title=react(purity)::src/screens/SolidsScreen.tsx:20:15: Cannot call impure function during render
-::warning file=src/screens/DiaryScreen.tsx,line=30,endLine=30,col=15,endColumn=25,title=react(purity)::src/screens/DiaryScreen.tsx:30:15: Cannot call impure function during render
-::warning file=src/screens/OnboardingScreen.tsx,line=164,endLine=164,col=77,endColumn=87,title=react(purity)::src/screens/OnboardingScreen.tsx:164:77: Cannot call impure function during render
-::warning file=src/screens/ReportScreen.tsx,line=222,endLine=222,col=46,endColumn=56,title=react(purity)::src/screens/ReportScreen.tsx:222:46: Cannot call impure function during render
-::warning file=src/screens/PumpingScreen.tsx,line=21,endLine=21,col=15,endColumn=25,title=react(purity)::src/screens/PumpingScreen.tsx:21:15: Cannot call impure function during render
 ::warning file=src/screens/VaccinesScreen.tsx,line=25,endLine=25,col=26,endColumn=36,title=react(purity)::src/screens/VaccinesScreen.tsx:25:26: Cannot call impure function during render
-::warning file=src/screens/BookScreen.tsx,line=186,endLine=186,col=77,endColumn=87,title=react(purity)::src/screens/BookScreen.tsx:186:77: Cannot call impure function during render
-::warning file=src/screens/BookScreen.tsx,line=38,endLine=38,col=5,endColumn=15,title=react(set-state-in-effect)::src/screens/BookScreen.tsx:38:5: Calling setState synchronously within an effect can trigger cascading renders
 
-Found 94 warnings and 0 errors.
-Finished in 143ms on 126 files with 116 rules using 4 threads.
+Found 96 warnings and 0 errors.
+Finished in 121ms on 129 files with 116 rules using 4 threads.
 ```
 ## Unit tests
 OK
 ```
 
 > leela@0.0.0 test
-> tsx tests/sweetspot.test.ts && tsx tests/duplicates.test.ts && tsx tests/webpush.test.ts && tsx tests/charts.test.ts && tsx tests/timerange.test.ts && tsx tests/alerts.test.ts && tsx tests/supplements.test.ts && tsx tests/history.test.ts && tsx tests/pump.test.ts && tsx tests/solids.test.ts
+> tsx tests/sweetspot.test.ts && tsx tests/duplicates.test.ts && tsx tests/webpush.test.ts && tsx tests/charts.test.ts && tsx tests/timerange.test.ts && tsx tests/alerts.test.ts && tsx tests/supplements.test.ts && tsx tests/history.test.ts && tsx tests/pump.test.ts && tsx tests/solids.test.ts && tsx tests/development.test.ts
 
 sweetspot: all good
 duplicates: all good
@@ -114,6 +115,7 @@ supplements: all good
 history: all good
 pump: all good
 solids: all good
+development: all good
 ```
 ## Edge bundles
 OK
@@ -125,7 +127,7 @@ OK
 
   supabase/functions/sweetspot-push/sweetspot.js  15.0kb
 
-⚡ Done in 5ms
+⚡ Done in 4ms
 
   supabase/functions/sweetspot-push/alerts.js  13.8kb
 
@@ -143,7 +145,7 @@ OK
 
 [36mvite v8.3.5 [32mbuilding client environment for production...[36m[39m
 transforming...
-✓ 5435 modules transformed.
+✓ 5437 modules transformed.
 rendering chunks...
 computing gzip size...
 dist/registerSW.js                                             0.14 kB
@@ -162,7 +164,7 @@ dist/assets/baloo-2-latin-ext-wght-normal-Dz43yst_.woff2      27.38 kB
 dist/assets/baloo-2-latin-wght-normal-B_TVFhwJ.woff2          33.18 kB
 dist/assets/baloo-2-devanagari-wght-normal-B4j4n2PV.woff2    115.14 kB
 dist/assets/pdf.worker.min-CjEcRF4W.mjs                    1,264.34 kB
-dist/assets/index-CyK6EEuz.css                                39.41 kB │ gzip:   9.03 kB
+dist/assets/index-iS61BGSu.css                                39.68 kB │ gzip:   9.08 kB
 dist/assets/pdf.worker.min-BBgG5STW.js                         0.07 kB │ gzip:   0.09 kB
 dist/assets/uuid-B2BVraWC.js                                   0.33 kB │ gzip:   0.23 kB
 dist/assets/useWidth-D3kZBFhL.js                               0.39 kB │ gzip:   0.28 kB
@@ -172,38 +174,40 @@ dist/assets/MagnifyingGlass.es-BMaq_RWy.js                     1.63 kB │ gzip:
 dist/assets/FileText.es-CuLuJbGW.js                            2.61 kB │ gzip:   0.79 kB
 dist/assets/FileArrowUp.es-DyOeQjJT.js                         2.70 kB │ gzip:   0.89 kB
 dist/assets/Printer.es-DTCYeCuV.js                             2.97 kB │ gzip:   1.06 kB
-dist/assets/bits-BSc5a8L6.js                                   3.54 kB │ gzip:   1.42 kB
+dist/assets/DevelopmentScreen-CZA6a7jW.js                      3.16 kB │ gzip:   1.50 kB
+dist/assets/bits-DNQGspgn.js                                   3.54 kB │ gzip:   1.42 kB
 dist/assets/BarChart-CFqa3OP9.js                               3.80 kB │ gzip:   1.84 kB
 dist/assets/period-iZ5sDhiN.js                                 3.86 kB │ gzip:   1.43 kB
-dist/assets/AdminScreen-DB9SEbmE.js                            4.15 kB │ gzip:   1.76 kB
-dist/assets/NotesScreen-zc6b0NM5.js                            4.58 kB │ gzip:   1.95 kB
-dist/assets/SolidsScreen-DNJpTqPJ.js                           7.09 kB │ gzip:   2.98 kB
-dist/assets/ReportScreen-fUNCG7sB.js                           7.78 kB │ gzip:   2.91 kB
-dist/assets/GrowthCard-DfTUuD7a.js                             7.88 kB │ gzip:   3.28 kB
-dist/assets/DiaryScreen-Uos6K3gd.js                            9.55 kB │ gzip:   3.41 kB
-dist/assets/VaccinesScreen-kIjNfE53.js                         9.94 kB │ gzip:   3.50 kB
+dist/assets/AdminScreen-DZtYhc_M.js                            4.15 kB │ gzip:   1.77 kB
+dist/assets/NotesScreen-DE6A42kD.js                            4.58 kB │ gzip:   1.96 kB
+dist/assets/development-BlHKNla0.js                            4.62 kB │ gzip:   1.93 kB
+dist/assets/SolidsScreen-CyG_XtqT.js                           7.09 kB │ gzip:   2.98 kB
+dist/assets/ReportScreen-DAS27y8L.js                           7.78 kB │ gzip:   2.92 kB
+dist/assets/GrowthCard-BcQB2ezL.js                             7.88 kB │ gzip:   3.28 kB
+dist/assets/VaccinesScreen-CeqEMFrI.js                         9.94 kB │ gzip:   3.50 kB
+dist/assets/DiaryScreen-DnhWWhqe.js                           10.54 kB │ gzip:   3.69 kB
 dist/assets/charts-niQ9mDTj.js                                10.71 kB │ gzip:   4.81 kB
-dist/assets/BookScreen-4f0SK2ga.js                            13.25 kB │ gzip:   4.69 kB
-dist/assets/PumpingScreen-4zMee7SF.js                         15.44 kB │ gzip:   6.04 kB
+dist/assets/BookScreen-BHSjdIeN.js                            13.25 kB │ gzip:   4.70 kB
+dist/assets/PumpingScreen-DMBDhyuK.js                         15.44 kB │ gzip:   6.05 kB
 dist/assets/insights-BRlZSAo7.js                              15.91 kB │ gzip:   5.31 kB
-dist/assets/FamilyScreen-C4G3rddP.js                          28.13 kB │ gzip:   9.28 kB
-dist/assets/ImportScreen-BVEg3gpV.js                          37.19 kB │ gzip:  13.93 kB
-dist/assets/HistoryScreen-DZOBSPgA.js                         39.95 kB │ gzip:  12.29 kB
+dist/assets/FamilyScreen-Dt-f4wJu.js                          28.13 kB │ gzip:   9.28 kB
+dist/assets/ImportScreen-DAf4PMGW.js                          37.20 kB │ gzip:  13.93 kB
+dist/assets/HistoryScreen-JKn2qDF7.js                         39.95 kB │ gzip:  12.30 kB
 dist/assets/Sheet-BDwaKeP1.js                                248.88 kB │ gzip:  81.51 kB
 dist/assets/clsx-D_GQ9ayx.js                                 260.89 kB │ gzip:  69.97 kB
 dist/assets/pdf-ULJPBbF3.js                                  430.16 kB │ gzip: 129.27 kB
-dist/assets/index-Bk_21etm.js                                597.20 kB │ gzip: 179.33 kB
+dist/assets/index-CVyZIV9w.js                                597.98 kB │ gzip: 179.49 kB
 
 [33m[plugin builtin:vite-reporter] 
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 833ms[39m
+[32m✓ built in 634ms[39m
 
 [36mPWA v2.0.0[39m
 mode      [35mgenerateSW[39m
-precache  [32m53 entries[39m [2m(2062.33 KiB)[22m
+precache  [32m55 entries[39m [2m(2071.92 KiB)[22m
 files generated
   [2mdist/sw.js[22m
   [2mdist/workbox-9c191d2f.js[22m
@@ -213,7 +217,7 @@ OK
 ```
 [36mvite v8.3.5 [32mbuilding client environment for development...[36m[39m
 transforming...
-✓ 5438 modules transformed.
+✓ 5440 modules transformed.
 rendering chunks...
 computing gzip size...
 preview/registerSW.js                                             0.13 kB
@@ -232,7 +236,7 @@ preview/assets/baloo-2-latin-ext-wght-normal-Dz43yst_.woff2      27.38 kB
 preview/assets/baloo-2-latin-wght-normal-B_TVFhwJ.woff2          33.18 kB
 preview/assets/baloo-2-devanagari-wght-normal-B4j4n2PV.woff2    115.14 kB
 preview/assets/pdf.worker.min-CjEcRF4W.mjs                    1,264.34 kB
-preview/assets/index-D-eu6-Sb.css                                39.27 kB │ gzip:   9.02 kB
+preview/assets/index-D8ZN9kIm.css                                39.54 kB │ gzip:   9.07 kB
 preview/assets/pdf.worker.min-DI4FfYVf.js                         0.08 kB │ gzip:   0.10 kB
 preview/assets/uuid-B2BVraWC.js                                   0.33 kB │ gzip:   0.23 kB
 preview/assets/useWidth-DutuY3mn.js                               0.39 kB │ gzip:   0.28 kB
@@ -243,39 +247,41 @@ preview/assets/FileText.es-B4XsgQLJ.js                            2.65 kB │ gz
 preview/assets/FileArrowUp.es-CFmWwjSx.js                         2.73 kB │ gzip:   0.90 kB
 preview/assets/Printer.es-CAUu9fC0.js                             3.00 kB │ gzip:   1.08 kB
 preview/assets/period-CUzt3JOp.js                                 3.86 kB │ gzip:   1.43 kB
+preview/assets/DevelopmentScreen-ColoR49U.js                      4.57 kB │ gzip:   1.71 kB
+preview/assets/development-BlHKNla0.js                            4.62 kB │ gzip:   1.93 kB
 preview/assets/seed-BWM65Z3e.js                                   5.10 kB │ gzip:   2.37 kB
 preview/assets/BarChart-OF86QLEH.js                               5.16 kB │ gzip:   2.07 kB
-preview/assets/bits-LQi1ShYZ.js                                   5.39 kB │ gzip:   1.67 kB
-preview/assets/AdminScreen-tfz3_jcG.js                            6.05 kB │ gzip:   2.01 kB
-preview/assets/NotesScreen-DAOSCDev.js                            6.77 kB │ gzip:   2.26 kB
-preview/assets/SolidsScreen-qq-kZKfu.js                           9.46 kB │ gzip:   3.30 kB
-preview/assets/GrowthCard-11yz0HxP.js                            10.64 kB │ gzip:   3.69 kB
+preview/assets/bits-CnAyD9pP.js                                   5.39 kB │ gzip:   1.67 kB
+preview/assets/AdminScreen-C9yxwOiM.js                            6.05 kB │ gzip:   2.01 kB
+preview/assets/NotesScreen-CGZKwhsi.js                            6.77 kB │ gzip:   2.26 kB
+preview/assets/SolidsScreen-CE_Ef5QG.js                           9.46 kB │ gzip:   3.30 kB
+preview/assets/GrowthCard-WYJ-em-v.js                            10.64 kB │ gzip:   3.69 kB
 preview/assets/charts-D2CPDFl-.js                                10.71 kB │ gzip:   4.81 kB
-preview/assets/ReportScreen-DAp5NPPN.js                          11.40 kB │ gzip:   3.32 kB
-preview/assets/DiaryScreen-CufNkwDJ.js                           13.25 kB │ gzip:   3.85 kB
-preview/assets/VaccinesScreen-DKSWbBK8.js                        14.08 kB │ gzip:   4.01 kB
+preview/assets/ReportScreen-CP5OIY6v.js                          11.40 kB │ gzip:   3.32 kB
+preview/assets/VaccinesScreen-DRs5NOJk.js                        14.07 kB │ gzip:   4.00 kB
+preview/assets/DiaryScreen-CSHgAekr.js                           14.66 kB │ gzip:   4.17 kB
 preview/assets/insights-BuQYGz7i.js                              15.91 kB │ gzip:   5.31 kB
-preview/assets/PumpingScreen-BPPRgVFU.js                         17.94 kB │ gzip:   6.39 kB
-preview/assets/BookScreen-Df46acrw.js                            18.51 kB │ gzip:   5.26 kB
+preview/assets/PumpingScreen-Dy-zMSUC.js                         17.94 kB │ gzip:   6.39 kB
+preview/assets/BookScreen-k27kheQG.js                            18.51 kB │ gzip:   5.26 kB
 preview/assets/store-v53ZpAsV.js                                 23.62 kB │ gzip:   8.67 kB
-preview/assets/FamilyScreen-BY3b2J3A.js                          35.72 kB │ gzip:  10.06 kB
-preview/assets/ImportScreen-B79O2QGc.js                          45.51 kB │ gzip:  14.83 kB
-preview/assets/HistoryScreen-BvKseIK6.js                         53.77 kB │ gzip:  13.83 kB
+preview/assets/FamilyScreen-ubybqE1m.js                          35.72 kB │ gzip:  10.05 kB
+preview/assets/ImportScreen-BW-lob0-.js                          45.52 kB │ gzip:  14.83 kB
+preview/assets/HistoryScreen-DP9P5JTA.js                         53.77 kB │ gzip:  13.83 kB
 preview/assets/clsx-DrD7-HX4.js                                 255.23 kB │ gzip:  68.00 kB
 preview/assets/Sheet-CIQB1In5.js                                258.36 kB │ gzip:  85.15 kB
 preview/assets/pdf-ULJPBbF3.js                                  430.16 kB │ gzip: 129.27 kB
-preview/assets/index-Cgnw8qcL.js                                839.57 kB │ gzip: 241.58 kB
+preview/assets/index-cYb8r6HI.js                                840.60 kB │ gzip: 241.74 kB
 
 [33m[plugin builtin:vite-reporter] 
 (!) Some chunks are larger than 500 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 898ms[39m
+[32m✓ built in 694ms[39m
 
 [36mPWA v2.0.0[39m
 mode      [35mgenerateSW[39m
-precache  [32m55 entries[39m [2m(2390.80 KiB)[22m
+precache  [32m57 entries[39m [2m(2402.43 KiB)[22m
 files generated
   [2mpreview/sw.js[22m
   [2mpreview/workbox-7e5eb42b.js[22m
