@@ -9,10 +9,15 @@
 //
 // Requests (POST, JSON):
 //   { action: "status", days?: 1..14 }  -> { child, status, logs }
-//   { action: "log", kind: "sleep"|"wake"|"feed"|"nappy"|"note", at?, room?, detail? } -> { ok, id }
+//      status also has (added 21 Nov 2026, older Ghar builds ignore them): wake_range [from, to],
+//      pump { side, due_at, last_at, last_kind, expect_ml, other: { side, due_at } | null } | null,
+//      vitamins { list: [name], left: [name] }
+//   { action: "log", kind: "sleep"|"wake"|"feed"|"nappy"|"note"|"activity"|"vitamin", at?, room?, detail? } -> { ok, id }
+//      activity: detail "Massage", "Bath", "Tummy time", "Outing: <place>"; vitamin: detail = its name
 //   { action: "delete", id }            -> { ok }   (only entries that were logged from Ghar)
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { sweetSpot } from './sweetspot.js'
+import { expectedMl, localMidnight, pumpDue, vitaminsLeft } from './alerts.js'
 
 const GHAR_URL = 'https://sfjzdkajewcrcqzbpyou.supabase.co'
 const DAY = 86_400_000
@@ -62,6 +67,7 @@ function db() {
 }
 
 const FEEDS = new Set(['nursing', 'bottle', 'solids'])
+const ACTIVITY_LABELS: Record<string, string> = { bath: 'Bath', massage: 'Massage', tummy: 'Tummy time', outing: 'Outing', outdoor: 'Outdoor play', indoor: 'Indoor play', story: 'Story time', skin: 'Skin to skin', teeth: 'Brushing teeth', screen: 'Screen time' }
 
 function feedDetail(e: Row): string {
   const d = e.data ?? {}
@@ -95,12 +101,20 @@ function asGharLogs(events: Row[], names: Map<string, string>): Row[] {
       out.push({ id: e.id, kind: 'feed', at: e.started_at, room: null, detail: [feedDetail(e), extra].filter(Boolean).join(' · '), by, from_ghar: fromGhar })
     } else if (e.type === 'diaper') {
       out.push({ id: e.id, kind: 'nappy', at: e.started_at, room: null, detail: [nappyDetail(e), extra].filter(Boolean).join(' · ') || null, by, from_ghar: fromGhar })
+    } else if (e.type === 'activity') {
+      const d = e.data ?? {}
+      const label = ACTIVITY_LABELS[d.kind] ?? d.label ?? 'Activity'
+      const mins = e.ended_at ? Math.round((Date.parse(e.ended_at) - Date.parse(e.started_at)) / 60000) : 0
+      const what = [d.kind === 'outing' && d.where ? `Outing: ${d.where}` : label, mins >= 1 ? `${mins} min` : '', extra].filter(Boolean).join(' · ')
+      out.push({ id: e.id, kind: 'note', at: e.started_at, room: null, detail: what, by, from_ghar: fromGhar })
     } else if (e.type === 'note' || e.type === 'medicine' || e.type === 'symptom' || e.type === 'temperature') {
       const d = e.data ?? {}
       const label =
         e.type === 'note'
           ? ''
-          : e.type === 'medicine'
+          : e.type === 'medicine' && d.supplement
+            ? `Vitamin: ${d.name ?? ''}`.trim()
+            : e.type === 'medicine'
             ? ['Medicine', [d.name, d.dose, d.dose ? d.unit : null].filter(Boolean).join(' ')].filter(Boolean).join(': ')
             : e.type === 'symptom' && d.kind === 'vaccine'
               ? ['Vaccine', d.vaccine].filter(Boolean).join(': ')
@@ -147,6 +161,25 @@ async function status(client: Row, link: Row, days: number) {
   }
   const next = ss?.next
   const cutoff = now - days * DAY
+  const tz = family?.timezone ?? 'UTC'
+  let pump: Row | null = null
+  try {
+    const p = pumpDue(list as never, now, tz)
+    if (p) {
+      pump = {
+        side: p.other ? p.side : null,
+        due_at: new Date(p.dueAt).toISOString(),
+        last_at: new Date(p.lastAt).toISOString(),
+        last_kind: p.lastKind,
+        expect_ml: expectedMl(list as never, p.side, p.dueAt, tz, now),
+        other: p.other ? { side: p.other.side, due_at: new Date(p.other.dueAt).toISOString() } : null,
+      }
+    }
+  } catch (err) {
+    console.error('pump', err)
+  }
+  const supplements = Array.isArray(child?.settings?.supplements) ? (child.settings.supplements as Row[]).map((x) => String(x?.name ?? '')).filter(Boolean) : []
+  const dayStart = localMidnight(now, tz)
   return {
     child: { name: child?.name ?? 'Baby', born: child?.birth_date ?? null },
     status: {
@@ -162,6 +195,9 @@ async function status(client: Row, link: Row, days: number) {
       next_feed: ss?.feed?.at ? new Date(ss.feed.at).toISOString() : null,
       last_nappy: lastNappy?.started_at ?? null,
       sweet_spot: ss?.status ?? null,
+      wake_range: ss?.wakeRange ? ss.wakeRange.map((t: number) => new Date(t).toISOString()) : null,
+      pump,
+      vitamins: supplements.length ? { list: supplements, left: vitaminsLeft(child?.settings, mine as never, link.child_id, dayStart, now + 60_000) } : null,
     },
     logs: asGharLogs(mine.filter((e) => Date.parse(e.started_at) >= cutoff || (e.ended_at && Date.parse(e.ended_at) >= cutoff)), names).slice(0, 300),
   }
@@ -201,6 +237,16 @@ async function log(client: Row, link: Row, me: Access, body: Row) {
     const d = detail.toLowerCase()
     const kind = d.startsWith('both') ? 'mixed' : d.startsWith('wet') ? 'wet' : d.startsWith('dirty') ? 'dirty' : undefined
     row = { ...base, id, type: 'diaper', started_at: at, data: { ...(kind ? { kind } : {}), ghar: { ...ghar, detail: detail || undefined } } }
+  } else if (body.kind === 'activity') {
+    const d = detail.toLowerCase()
+    const kind = d.startsWith('massage') ? 'massage' : d.startsWith('bath') ? 'bath' : d.startsWith('tummy') ? 'tummy' : d.startsWith('outing') ? 'outing' : undefined
+    const where = kind === 'outing' ? detail.replace(/^outing:?\s*/i, '').trim() : ''
+    row = { ...base, id, type: 'activity', started_at: at, data: { ...(kind ? { kind } : { label: detail || 'Activity' }), ...(where ? { where } : {}), ghar: { ...ghar } } }
+  } else if (body.kind === 'vitamin') {
+    if (!detail) return { ok: false, error: 'which vitamin?' }
+    const { data: kid } = await client.from('children').select('settings').eq('id', link.child_id).single()
+    const known = (Array.isArray(kid?.settings?.supplements) ? kid.settings.supplements : []).find((x: Row) => String(x?.name ?? '').toLowerCase() === detail.toLowerCase())
+    row = { ...base, id, type: 'medicine', started_at: at, data: { name: known?.name ?? detail, ...(known?.dose ? { dose: known.dose, unit: known.unit } : {}), supplement: true, ghar } }
   } else if (body.kind === 'note') {
     if (!detail) return { ok: false, error: 'empty note' }
     row = { ...base, id, type: 'note', started_at: at, notes: detail, data: { ghar } }
