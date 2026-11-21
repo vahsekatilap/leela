@@ -47,7 +47,7 @@ export function PeriodBar({
   const [picking, setPicking] = useState(false)
   const label = periodLabel(period, tz, now, { birth: Boolean(birth) })
   const last = Math.min(now, addDaysTz(period.to, -1, tz).getTime())
-  const sub = period.kind === 'day' ? (label === 'Today' || label === 'Yesterday' ? new TZDate(period.from, tz).toLocaleDateString('en', { weekday: 'long', day: 'numeric', month: 'long', timeZone: tz }) : null) : rangeText(Math.max(period.from, start), last, tz)
+  const sub = period.kind === 'day' ? (label === 'Today' || label === 'Yesterday' ? new TZDate(period.from, tz).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: tz }) : null) : rangeText(Math.max(period.from, start), last, tz)
   const today = startOf(now, tz)
   const dates: number[] = []
   for (let d = today, i = 0; d >= start && i < 31; d = addDaysTz(d, -1, tz).getTime(), i++) dates.push(d)
