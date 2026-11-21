@@ -430,7 +430,7 @@ interface Dist {
 }
 
 // Tuned on a real baby's six weeks of logs (each sleep predicted from only what came before it).
-const TOD_SIGMA = 70 // minutes: examples an hour away in the day still count well
+const TOD_SIGMA = 50 // minutes: examples within the hour count most (tuned on real logs, Nov 2026)
 const RECENT_HALF = 7 // days: last week counts twice as much as the week before
 /** How much an example's clock time counts as well as its length (babies drift to the same times). */
 const CLOCK_PULL = 0.5
@@ -613,6 +613,12 @@ function plan(c: Ctx, woke: number, prev: number, elapsed: number, afterNight: b
           // A short nap bridges the long stretch to bedtime.
           len = Math.min(len, 35)
         }
+      } else if (night && Math.abs(bed - center) <= 4 * H) {
+        // The night was due anyway: it starts at the family's bedtime.
+        const move = Math.max(bed, t + 20 * MIN) - center
+        center += move
+        start += move
+        end += move
       }
     }
     const item: SleepWindow = {
