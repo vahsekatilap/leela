@@ -11,6 +11,7 @@ import { TimerCard } from '../components/TimerCard'
 import { Timeline } from '../components/Timeline'
 import { ChildSheet } from '../components/ChildSheet'
 import { HealthCards } from '../components/HealthCards'
+import { GharCheck } from '../components/GharCheck'
 import { NudgeCards } from '../components/Nudges'
 import { VitaminsSheet } from '../components/Vitamins'
 import { useNow } from '../hooks/useNow'
@@ -258,6 +259,8 @@ export function TodayScreen() {
       )}
 
       <CatchUp events={events} now={now} />
+
+      <GharCheck events={events} now={now} onFix={(e) => setSheet({ type: e.type, edit: e })} />
 
       {fever && lastTemp && (
         <div className="mb-4 rounded-3xl bg-[var(--health-soft)] px-4 py-3 text-[15px]">

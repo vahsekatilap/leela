@@ -14,6 +14,7 @@ Ghar, the family's Android app (repo `vahsekatilap/ghar`, Supabase project `sfjz
 - The bridge reuses the sweet spot code: `npm run build:edge` writes `sweetspot.js` into both `sweetspot-push/` and `ghar-bridge/` (and `alerts.js` into `sweetspot-push/`). Redeploy both functions after changing `src/lib/sweetspot.ts`.
 - Entries logged from Ghar have no `created_by` (Ghar people aren't Leela users); `data.ghar` holds who logged it (`by`, `member`), the room (`room`) and any extra words (`detail`). The app shows `data.ghar.by` wherever it shows who logged an entry (`loggedBy()` / `gharName()` in `src/lib/store.ts`); use those for any new place.
 - Bottles of breast milk from Ghar are saved with `contents: 'breast'` (they were `'breastmilk'` until 21 Nov 2026; migration 0005 fixed the old rows).
+- Every entry logged (or sleep woken) from Ghar gets `data.ghar_check = {by, what: 'logged'|'woke'}`: it counts at once (timers, sweet spot) but shows in Today's "From Ghar · to check" card (`src/components/GharCheck.tsx`) until Keshav or Nida tap Approve (removes `ghar_check`), Fix (opens the entry) or Remove; Approve all for many (Keshav, 22 Nov 2026).
 - Who may see or log is decided in Ghar (`leela_access()` there), asked with the person's own Ghar sign-in.
 - Added 21 Nov 2026 (only added, nothing changed): status gives `wake_range`, `pump` and `vitamins` (the bridge now also bundles `alerts.js`); `log` takes `activity` and `vitamin`. Ghar build 3c88c19 shows and uses them.
 

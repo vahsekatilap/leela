@@ -257,6 +257,9 @@ async function log(client: Row, link: Row, me: Access, body: Row) {
     if (!running?.length) return { ok: true, note: 'not asleep' }
     const { error } = await client.rpc('timer_stop', { p_event_id: running[0].id, p_at: at })
     if (error) throw error
+    // Waking from Ghar also waits for Keshav or Nida to check it in LAPdiary.
+    const { data: cur } = await client.from('events').select('data').eq('id', running[0].id).single()
+    await client.from('events').update({ data: { ...(cur?.data ?? {}), ghar_check: { by: me.name, what: 'woke' } } }).eq('id', running[0].id)
     return { ok: true, id: `${running[0].id}:wake` }
   }
 
@@ -303,6 +306,9 @@ async function log(client: Row, link: Row, me: Access, body: Row) {
   } else {
     return { ok: false, error: 'unknown kind' }
   }
+  // Shows at once (timers and the sweet spot stay right) but waits in
+  // LAPdiary's "From Ghar · to check" card until Keshav or Nida approve it.
+  row.data = { ...(row.data ?? {}), ghar_check: { by: me.name, what: 'logged' } }
   const { error } = await client.from('events').insert(row)
   if (error) throw error
   return { ok: true, id }
