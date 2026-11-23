@@ -149,9 +149,9 @@ export function draftsOf(r: RecordChange, tz: string, now: number, words: string
 }
 
 /** All drafts for the changes picked, with ones already in LAPdiary left out. */
-export function planRecords(rs: RecordChange[], events: LeelaEvent[], childId: string, tz: string, words: string): { drafts: Draft[]; skipped: number } {
+export function planRecords(rs: RecordChange[], events: LeelaEvent[], childId: string, tz: string, words: string, now = Date.now()): { drafts: Draft[]; skipped: number } {
   const all = rs.flatMap((r, i) => {
-    const ds = draftsOf(r, tz, Date.now(), words, i)
+    const ds = draftsOf(r, tz, now, words, i)
     const every = r.repeat?.every ?? 1
     if (every <= 1) return ds
     // "About every third day": leave out days with one already logged within half the gap.

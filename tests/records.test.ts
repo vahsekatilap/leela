@@ -29,7 +29,7 @@ assert.equal(baths[0].end! - baths[0].start, 20 * 60_000)
 assert.equal(draftsOf(u.records[3], TZ, now, 'w', 3).length, 0)
 // Already logged: left out.
 const existing = [{ id: 'a', family_id: 'f', child_id: 'c', type: 'activity', started_at: new Date(baths[0].start).toISOString(), ended_at: null, timer_state: null, data: { kind: 'bath' }, photo_paths: [], notes: null, source: 'app', import_id: null, created_by: 'u', updated_by: 'u', created_at: '', updated_at: '', deleted_at: null }] as never
-const plan = planRecords([u.records[1]], existing, 'c', TZ, 'w')
+const plan = planRecords([u.records[1]], existing, 'c', TZ, 'w', now)
 assert.equal(plan.skipped, 1)
 assert.equal(plan.drafts.length, 3)
 assert.match(schemaText({ id: 'c', name: 'Leela', birth_date: '2026-07-22', settings: {} } as never), /growth \(Growth\): weight_kg/)
@@ -42,7 +42,7 @@ console.log('records: all good')
   const all = draftsOf(r, TZ, now, 'w', 0)
   assert.equal(all.length, 7) // 1, 4, 7, 10, 13, 16, 19
   const logged = [{ id: 'b', family_id: 'f', child_id: 'c', type: 'activity', started_at: '2026-11-10T13:00:00.000Z', ended_at: null, timer_state: null, data: { kind: 'bath' }, photo_paths: [], notes: null, source: 'app', import_id: null, created_by: 'u', updated_by: 'u', created_at: '', updated_at: '', deleted_at: null }] as never
-  const p = planRecords([r], logged, 'c', TZ, 'w')
+  const p = planRecords([r], logged, 'c', TZ, 'w', now)
   assert.equal(p.drafts.length, 6) // the bath logged on the 10th covers the 10th; the 7th and 13th are 3 days away
 }
 console.log('records repeat: all good')
