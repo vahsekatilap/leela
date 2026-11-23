@@ -142,6 +142,15 @@ const ev = (type: string, start: number, end: number | null, data: Record<string
   assert.equal(nappyNudge(wet as never, 'c', 'Leela', 120, at('21', '18:30'), TZ)?.important, true)
   assert.equal(nappyNudge(wet.slice(-10) as never, 'c', 'Leela', 120, at('21', '18:30'), TZ), null) // not logged closely enough
 
+  // A late night (3 am to noon) isn't a missed feed or nappy: only time awake in the day counts.
+  const night = ev('sleep', at('21', '03:30'), at('21', '12:30'))
+  const lateFeed = { at: at('21', '13:00'), last: at('21', '03:20'), everyMin: 180, range: [at('21', '12:40'), at('21', '13:30')] as [number, number], basis: 'logs' }
+  assert.equal(feedNudge(lateFeed, 120, 'Leela', [night] as never, 'c', at('21', '12:35'), TZ)?.important, undefined)
+  assert.equal(feedNudge(lateFeed, 120, 'Leela', [night] as never, 'c', at('21', '17:30'), TZ)?.important, true)
+  const wetNight = [...nappies.filter((e) => Date.parse(e.started_at) <= at('21', '03:00')), ev('diaper', at('21', '03:15'), null, { kind: 'wet' })]
+  assert.equal(nappyNudge([...wetNight, night] as never, 'c', 'Leela', 120, at('21', '12:35'), TZ), null)
+  assert.equal(nappyNudge([...wetNight, night] as never, 'c', 'Leela', 120, at('21', '18:35'), TZ)?.important, true)
+
   assert.equal(vitaminsNudge('Leela', ['Vitamin D'], [], 'x')?.important, undefined)
   assert.equal(vitaminsNudge('Leela', ['Vitamin D'], ['Vitamin D'], 'x')?.title, 'Important: Vitamin D')
   assert.equal(vitaminsNudge('Leela', [], ['Vitamin D'], 'x'), null)

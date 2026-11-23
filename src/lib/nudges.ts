@@ -159,6 +159,32 @@ export function fridgePastNudge(events: Ev[], now: number, tz: string): Nudge[] 
     }))
 }
 
+// ------------------------------------------------------------------------- long sleeps
+/**
+ * Time between two moments spent in long sleeps (4 hours or more: her night, whenever that is for
+ * her). Feeds and nappy changes wait while she sleeps, so that time isn't counted as time in the day.
+ */
+function longSleepMs(events: Ev[], childId: string, from: number, to: number): number {
+  const list = events
+    .filter((e) => !e.deleted_at && e.type === 'sleep' && e.child_id === childId)
+    .map((e) => {
+      const s = Date.parse(e.started_at)
+      return { s, e: e.ended_at ? Date.parse(e.ended_at) : e.timer_state ? to : s }
+    })
+    .filter((x) => x.e > x.s)
+    .sort((a, b) => a.s - b.s)
+  // A sleep that resumes within 20 minutes (a quick resettle) is one sleep.
+  const merged: { s: number; e: number }[] = []
+  for (const x of list) {
+    const prev = merged[merged.length - 1]
+    if (prev && x.s - prev.e < 20 * MIN) prev.e = Math.max(prev.e, x.e)
+    else merged.push({ ...x })
+  }
+  let ms = 0
+  for (const x of merged) if (x.e - x.s >= 4 * H) ms += Math.max(0, Math.min(x.e, to) - Math.max(x.s, from))
+  return ms
+}
+
 // ------------------------------------------------------------------------- feeds
 /** Longest daytime stretch between feeds that's usual at this age (from common guidance), hours. */
 function feedGapLimit(ageDays: number | null): number | null {
@@ -187,7 +213,8 @@ export function feedNudge(
   const gap = now - f.last
   const limit = feedGapLimit(ageDays)
   const h = hourOf(now, tz)
-  if (limit && gap > (limit + 0.5) * H && h >= 7 && h < 22)
+  // Her night's sleep isn't part of the stretch: only time in the day counts.
+  if (limit && gap - longSleepMs(events, childId, f.last, now) > (limit + 0.5) * H && h >= 7 && h < 22)
     return {
       slot: `imp/feed/${f.last}`,
       important: true,
@@ -216,7 +243,8 @@ export function nappyNudge(events: Ev[], childId: string, name: string, ageDays:
   if (wet.filter((t) => t > now - 7 * DAY).length < 28) return null // not logged closely enough to tell
   const last = wet[wet.length - 1]
   const limit = (ageDays < 183 ? 6 : 8) * H
-  if (now - last < limit) return null
+  // Nappies wait while she sleeps the night: that time isn't counted.
+  if (now - last - longSleepMs(events, childId, last, now) < limit) return null
   return {
     slot: `imp/nappy/${last}`,
     important: true,
