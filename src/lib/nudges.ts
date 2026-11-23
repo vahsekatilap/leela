@@ -165,6 +165,13 @@ export function fridgePastNudge(events: Ev[], now: number, tz: string): Nudge[] 
  * her). Feeds and nappy changes wait while she sleeps, so that time isn't counted as time in the day.
  */
 function longSleepMs(events: Ev[], childId: string, from: number, to: number): number {
+  let ms = 0
+  for (const x of longSleeps(events, childId, to)) ms += Math.max(0, Math.min(x.e, to) - Math.max(x.s, from))
+  return ms
+}
+
+/** Her long sleeps (4 hours or more), a quick resettle within 20 minutes counted as the same sleep. */
+function longSleeps(events: Ev[], childId: string, to: number): { s: number; e: number }[] {
   const list = events
     .filter((e) => !e.deleted_at && e.type === 'sleep' && e.child_id === childId)
     .map((e) => {
@@ -180,9 +187,12 @@ function longSleepMs(events: Ev[], childId: string, from: number, to: number): n
     if (prev && x.s - prev.e < 20 * MIN) prev.e = Math.max(prev.e, x.e)
     else merged.push({ ...x })
   }
-  let ms = 0
-  for (const x of merged) if (x.e - x.s >= 4 * H) ms += Math.max(0, Math.min(x.e, to) - Math.max(x.s, from))
-  return ms
+  return merged.filter((x) => x.e - x.s >= 4 * H)
+}
+
+/** Just up from her night (a long sleep ended within the hour): gentle notes wait (Keshav, 24 Nov 2026). */
+function justWoke(events: Ev[], childId: string, now: number): boolean {
+  return longSleeps(events, childId, now).some((x) => x.e <= now && now - x.e < 60 * MIN)
 }
 
 // ------------------------------------------------------------------------- feeds
@@ -222,7 +232,7 @@ export function feedNudge(
       body: `It’s been ${hours(gap)} since ${name}’s last feed at ${clock(f.last, tz)}, longer than babies her age usually go in the day. Offer a feed now; if she isn’t interested or seems unwell, call her doctor.`,
     }
   const lateAt = (f.range?.[1] ?? f.at + 30 * MIN) + 30 * MIN
-  if (now < lateAt || now >= lateAt + 2 * H) return null
+  if (now < lateAt || now >= lateAt + 2 * H || justWoke(events, childId, now)) return null
   return {
     slot: `late/feed/${f.last}`,
     title: 'Maybe time for a feed',
@@ -288,6 +298,7 @@ const ACTIVITY_TITLES: Record<string, string> = {
  */
 export function routineNudges(events: Ev[], childId: string, name: string, now: number, tz: string, day: string): Nudge[] {
   const out: Nudge[] = []
+  if (justWoke(events, childId, now)) return out
   const m = minuteNow(now, tz)
   const soft = understanding(dayContext(events, childId, now), 'baby')
   const acts = habits(events as never, childId, (e) => (e.type === 'activity' ? activityKind(e, ACTIVITY_NAMES) : null), now, tz)

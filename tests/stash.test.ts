@@ -115,6 +115,10 @@ const ev = (type: string, start: number, end: number | null, data: Record<string
   assert.equal(gentle.length, 1)
   assert.equal(gentle[0].title, 'Bath time, whenever it suits')
   assert.doesNotMatch(gentle[0].body, /\b(missed|late|forgot)\b/i)
+  // Just up from her night: gentle notes wait an hour.
+  const upAt = [ev('sleep', at('21', '02:00'), at('21', '11:00'))]
+  assert.equal(routineNudges([...events, ...upAt] as never, 'c', 'Leela', at('21', '11:30'), TZ, '2026-11-21').length, 0)
+  assert.equal(routineNudges([...events, ...upAt] as never, 'c', 'Leela', at('21', '12:05'), TZ, '2026-11-21').length, 1)
   // After an outing yesterday, the words say so.
   events.push(ev('activity', at('20', '17:00'), at('20', '19:00'), { kind: 'outing', where: "Nani's house" }))
   const soft = routineNudges(events as never, 'c', 'Leela', at('21', '11:30'), TZ, '2026-11-21')
@@ -147,6 +151,8 @@ const ev = (type: string, start: number, end: number | null, data: Record<string
   const lateFeed = { at: at('21', '13:00'), last: at('21', '03:20'), everyMin: 180, range: [at('21', '12:40'), at('21', '13:30')] as [number, number], basis: 'logs' }
   assert.equal(feedNudge(lateFeed, 120, 'Leela', [night] as never, 'c', at('21', '12:35'), TZ)?.important, undefined)
   assert.equal(feedNudge(lateFeed, 120, 'Leela', [night] as never, 'c', at('21', '17:30'), TZ)?.important, true)
+  const gentleFeed = { at: at('21', '12:00'), last: at('21', '09:00'), everyMin: 180, range: [at('21', '11:40'), at('21', '12:30')] as [number, number], basis: 'logs' }
+  assert.equal(feedNudge(gentleFeed, 120, 'Leela', [ev('sleep', at('21', '09:05'), at('21', '13:10'))] as never, 'c', at('21', '13:20'), TZ), null)
   const wetNight = [...nappies.filter((e) => Date.parse(e.started_at) <= at('21', '03:00')), ev('diaper', at('21', '03:15'), null, { kind: 'wet' })]
   assert.equal(nappyNudge([...wetNight, night] as never, 'c', 'Leela', 120, at('21', '12:35'), TZ), null)
   assert.equal(nappyNudge([...wetNight, night] as never, 'c', 'Leela', 120, at('21', '18:35'), TZ)?.important, true)
