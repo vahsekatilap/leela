@@ -1,10 +1,10 @@
 // Notifications besides the sweet spot: medicine doses, vaccines and the evening summary.
 // No libraries, so supabase/functions/sweetspot-push can use the same code: `npm run build:edge`
 // bundles this file (and vaccines.ts) into sweetspot-push/alerts.js.
-import { milkStash, stashExpiring, type Lot } from './stash'
+import { milkStash, readStashCount, stashExpiring, type Lot } from './stash'
 import { localDay, vaccinePlan, vaccineReminder } from './vaccines'
 
-export { localDay, milkStash, stashExpiring, vaccinePlan, vaccineReminder }
+export { localDay, milkStash, readStashCount, stashExpiring, vaccinePlan, vaccineReminder }
 
 /** "Use the fridge milk": pumped milk nearing its 4 days in the fridge. */
 export function stashText(lot: Lot, tz: string): { title: string; body: string } {

@@ -1,6 +1,7 @@
 // Every change goes through here: applied on the phone instantly, then queued for the server.
 import { getState } from './store'
 import { enqueue } from './sync'
+import { db } from './db'
 import { supabase } from './supabase'
 import { TYPES } from './config'
 import { nursingSeconds } from './counting'
@@ -90,8 +91,10 @@ export async function editEvent(
   const cur = s.events[id]
   if (!cur) return
   const loaded = opts?.base ?? cur.updated_at
+  // This phone's own changes to the entry still on their way (a timer just stopped) aren't a clash.
+  const mineWaiting = (await db.outbox.where('rowId').equals(id).count()) > 0
   putLocal({ ...cur, ...patch, updated_by: s.userId })
-  await enqueue({ kind: 'update', table: 'events', rowId: id, patch, ifUpdatedAt: opts?.force || cur._local ? undefined : loaded })
+  await enqueue({ kind: 'update', table: 'events', rowId: id, patch, ifUpdatedAt: opts?.force || cur._local || mineWaiting ? undefined : loaded })
   // A running breastfeed that really started earlier (or later): its sides start with it.
   if (cur.type === 'nursing' && cur.timer_state && patch.started_at && patch.started_at !== cur.started_at) {
     alignSegments(id, patch.started_at)

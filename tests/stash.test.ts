@@ -171,5 +171,24 @@ const ev = (type: string, start: number, end: number | null, data: Record<string
   assert.deepEqual(vitaminsLeft(settings, [], 'c', midnight('2026-11-10'), midnight('2026-11-10') + 3_600_000), ['Vitamin D'])
 }
 
+// ---------------------------------------------------------------- counted by hand
+{
+  const a = ev('pump', at('15', '08:00'), at('15', '08:20'), { left_ml: 100, stash: 'fridge' })
+  const b = ev('pump', at('16', '08:00'), at('16', '08:20'), { left_ml: 60, stash: 'fridge' })
+  // Really 120 in the fridge on the 16th at noon (a bottle wasn't logged): the oldest milk goes first.
+  const less = milkStash([a, b], at('16', '13:00'), { at: new Date(at('16', '12:00')).toISOString(), fridge_ml: 120, freezer_ml: 50 })
+  assert.equal(less.fridgeMl, 120)
+  assert.equal(less.freezerMl, 50)
+  assert.equal(less.lots.find((l) => l.id === a.id)!.left, 60)
+  // A pumping and a bottle after the count are counted on top.
+  const c = ev('pump', at('16', '15:00'), at('16', '15:20'), { right_ml: 40, stash: 'fridge' })
+  const d = ev('bottle', at('16', '18:00'), null, { contents: 'breast', amount_ml: 30, stash: 'fridge' })
+  assert.equal(milkStash([a, b, c, d], at('16', '19:00'), { at: new Date(at('16', '12:00')).toISOString(), fridge_ml: 120, freezer_ml: 0 }).fridgeMl, 130)
+  // More than counted: the extra is milk counted at that time.
+  const more = milkStash([a], at('15', '13:00'), { at: new Date(at('15', '12:00')).toISOString(), fridge_ml: 250, freezer_ml: 0 })
+  assert.equal(more.fridgeMl, 250)
+  assert.ok(more.lots.some((l) => l.id.startsWith('count-fridge') && l.left === 150))
+}
+
 assert.equal(readAlerts({}).stash, true)
 console.log('stash, plan, goal and routine tests passed')

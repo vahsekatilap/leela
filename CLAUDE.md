@@ -38,7 +38,7 @@ Outings and visits are the activity kind `outing` with `data.where` (place chips
 ## Pumping coach, milk stash and nudges (21 Nov 2026)
 
 - The Pump button opens the coach (`src/screens/PumpingScreen.tsx`, overlay `pumping`, also `?open=pumping`): Start pumping (suggested start side and length; while running, a timer with prompts from `sittingPrompt()`, the newest photo of the baby, and Stop opens the entry for the ml and where the milk went), best time to pump per side with a line about Leela's sleep or feed, today against her own usual day with a streak (`pumpTarget()`), the next 24 hours (`pumpPlan()` in alerts.ts, interleaved with Leela's predicted sleeps), the milk stash, then the older insights.
-- Milk stash (`src/lib/stash.ts`): pumpings with `data.stash` fridge/freezer go in; breast-milk bottles take out oldest first from `data.stash` (fridge/freezer), none when 'fresh', fridge then freezer when unsaid (Ghar bottles); `stash_gone_at` marks used or thrown away. Fridge 4 days, freezer 6 months (CDC).
+- Milk stash (`src/lib/stash.ts`): pumpings with `data.stash` fridge/freezer go in; breast-milk bottles take out oldest first from `data.stash` (fridge/freezer), none when 'fresh', fridge then freezer when unsaid (Ghar bottles); `stash_gone_at` marks used or thrown away. Fridge 4 days, freezer 6 months (CDC). "Correct" on the stash card saves a count by hand in `children.settings.stash` (`at`, `fridge_ml`, `freezer_ml`; `readStashCount()`): at that moment less takes out the oldest milk, more adds a `count-…` lot dated then; everything after is counted on top (the app, the Ghar bridge and sweetspot-push all pass it to `milkStash`).
 - Nudges (`src/lib/nudges.ts`, timing from `src/lib/routine.ts`): strict underneath (her own rhythm checked against WHO/IAP/CDC guidance), gentle words (what helps next, never what was missed; `dayContext()` explains a longer gap after an outing, vaccines or her being unwell). "Important" only for a real miss: long stretch without a feed beyond what's usual for her age, no wet nappy for 6 h (only when nappies are logged closely; time in long sleeps of 4 h or more, her night whenever it is, doesn't count towards either, so waking from a late night isn't a miss: weekly check, 23 Nov 2026), a vitamin missed two days running, a breast unemptied 8 h, fridge milk past 4 days. Sent by `sweetspot-push` to both parents (prefs `routine`, `important`, `pump`, `stash`), gentle ones at most 3 a day, never while she sleeps nor in the first hour after her night (a sleep of 4 h or more) ends (Keshav, 24 Nov 2026; Important ones still come, and Keshav chose to keep the 8 h breast alert from 7 am even while they sleep); Today shows the same (`src/components/Nudges.tsx`). Keshav's wishes: gentle, encouraging, classy and subtle; Nida should never feel bad.
 
 ## Reminders, diary and solids (21 Nov 2026)
@@ -81,6 +81,10 @@ The deployed functions are one-line wrappers made in the Supabase dashboard (Edg
 ## Checking work
 
 Network installs may not work in Claude's workspace. Push work to a branch first: `.github/workflows/check.yml` runs lint, unit tests, the edge bundles and the build, and writes `<branch>/report.md` (plus freshly built `bundles/`) to the `check-results` branch, readable with git. Merge to main only when it passes; main deploys the app.
+
+## Edit clashes
+
+`editEvent` checks that nobody changed the entry since it was opened (`ifUpdatedAt`), but not when this phone still has its own changes to that entry waiting in the outbox (a timer just stopped), and `onEditConflict` only asks "keep yours or theirs" when the server row's `updated_by` is another person; a clash with one's own earlier change is saved on top quietly (fixed 25 Nov 2026 after false prompts on every bottle and pumping).
 
 ## Look and behaviour (Keshav's choices, Nov 2026)
 

@@ -6,14 +6,14 @@ import { LogSheet } from '../components/LogSheet'
 import { Overlay } from '../components/Overlay'
 import { BarChart } from '../components/charts/BarChart'
 import { Panel, StatGrid } from '../components/history/bits'
-import { Button, Toggle } from '../components/ui'
+import { Button, Stepper, Toggle } from '../components/ui'
 import { useNow } from '../hooks/useNow'
-import { editEvent, startTimer, stopTimer } from '../lib/actions'
+import { editEvent, saveChildSettings, startTimer, stopTimer } from '../lib/actions'
 import { pumpDue, pumpPlan, type PumpDue } from '../lib/alerts'
 import { photoUrl } from '../lib/photos'
 import { expectedMl, pumpingCoach, pumpTarget, sitting, sittingPrompt, type Sitting, type Tip } from '../lib/pumping'
 import { localReminder } from '../lib/push'
-import { milkStash, pumpMl, type Lot, type Place } from '../lib/stash'
+import { isCounted, milkStash, pumpMl, readStashCount, type Lot, type Place } from '../lib/stash'
 import { activeChild, useLeela } from '../lib/store'
 import { sweetSpot, type SweetSpot } from '../lib/sweetspot'
 import { dayStart, durationText, fmtTime } from '../lib/time'
@@ -70,7 +70,7 @@ export function PumpingScreen({ open, onClose }: { open: boolean; onClose: () =>
         plan: pumpPlan(events as never, t, tz),
         target: pumpTarget(events as never, t, tz, startOf),
         sit: sitting(events as never, t),
-        stash: milkStash(events as never, t),
+        stash: milkStash(events as never, t, readStashCount(child?.settings)),
         coach: pumpingCoach(events as never, t, tz, startOf),
         spot: child ? sweetSpot(all.filter((e) => e.started_at >= cut), child, family, t) : null,
       })
@@ -427,8 +427,42 @@ function StashCard({ stash, events, tz, now }: { stash: ReturnType<typeof milkSt
     if (e) void editEvent(id, { data: { ...e.data, stash: 'freezer' } }, { base: e.updated_at })
   }
   const empty = !stash.lots.length
+  const child = activeChild()
+  const [fixing, setFixing] = useState<{ fridge: number; freezer: number } | null>(null)
+  const saveCount = async () => {
+    if (!child || !fixing) return
+    await saveChildSettings(child.id, 'stash', { at: new Date().toISOString(), fridge_ml: Math.max(0, Math.round(fixing.fridge)), freezer_ml: Math.max(0, Math.round(fixing.freezer)) })
+    setFixing(null)
+    useLeela.getState().toast({ text: 'Milk stash updated.' })
+  }
   return (
-    <Panel title="Milk stash">
+    <Panel
+      title="Milk stash"
+      aside={
+        child && !fixing ? (
+          <button type="button" onClick={() => setFixing({ fridge: stash.fridgeMl, freezer: stash.freezerMl })} className="min-h-9 text-[15px] font-semibold text-[var(--pump)]">
+            Correct
+          </button>
+        ) : undefined
+      }
+    >
+      {fixing && (
+        <div className="mb-3 rounded-2xl bg-card-2 p-3">
+          <p className="mb-2 text-[15px] leading-snug">What’s really there now? Milk taken out comes off the oldest first; milk added counts from now.</p>
+          <p className="mb-1 text-[14px] font-semibold text-ink-2">Fridge</p>
+          <Stepper value={fixing.fridge} onChange={(v) => setFixing({ ...fixing, fridge: v ?? 0 })} step={10} unit="ml" label="fridge millilitres" />
+          <p className="mt-3 mb-1 text-[14px] font-semibold text-ink-2">Freezer</p>
+          <Stepper value={fixing.freezer} onChange={(v) => setFixing({ ...fixing, freezer: v ?? 0 })} step={10} unit="ml" label="freezer millilitres" />
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button variant="secondary" size="md" onClick={() => setFixing(null)}>
+              Cancel
+            </Button>
+            <Button tone="pump" size="md" onClick={() => void saveCount()}>
+              Save
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="mb-3 grid grid-cols-2 gap-2">
         <div className="rounded-2xl bg-card-2 px-3 py-2.5">
           <p className="text-[13px] font-semibold text-ink-2">Fridge</p>
@@ -463,7 +497,7 @@ function StashCard({ stash, events, tz, now }: { stash: ReturnType<typeof milkSt
       {stash.lots.length > 0 && (
         <ul className="mb-2 space-y-2">
           {stash.lots.slice(0, 8).map((l) => (
-            <LotRow key={l.id} l={l} tz={tz} now={now} onGone={() => gone(l.id)} onFreeze={() => toFreezer(l.id)} />
+            <LotRow key={l.id} l={l} tz={tz} now={now} onGone={isCounted(l) ? undefined : () => gone(l.id)} onFreeze={isCounted(l) ? undefined : () => toFreezer(l.id)} />
           ))}
         </ul>
       )}
@@ -480,7 +514,7 @@ function StashCard({ stash, events, tz, now }: { stash: ReturnType<typeof milkSt
   )
 }
 
-function LotRow({ l, tz, now, onGone, onFreeze }: { l: Lot; tz: string; now: number; onGone: () => void; onFreeze: () => void }) {
+function LotRow({ l, tz, now, onGone, onFreeze }: { l: Lot; tz: string; now: number; onGone?: () => void; onFreeze?: () => void }) {
   const past = l.useBy <= now
   const soon = !past && l.useBy - now < 24 * 3_600_000
   return (
@@ -494,10 +528,10 @@ function LotRow({ l, tz, now, onGone, onFreeze }: { l: Lot; tz: string; now: num
         </span>
       </div>
       <p className="text-[13px] text-ink-2">
-        {l.place === 'fridge' ? 'Fridge' : 'Freezer'}, pumped {weekday(l.at, tz)} {fmtTime(l.at, tz)}
+        {l.place === 'fridge' ? 'Fridge' : 'Freezer'}, {isCounted(l) ? 'counted by hand' : 'pumped'} {weekday(l.at, tz)} {fmtTime(l.at, tz)}
       </p>
-      <div className="mt-1.5 flex gap-2">
-        {l.place === 'fridge' && !past && (
+      {onGone && <div className="mt-1.5 flex gap-2">
+        {l.place === 'fridge' && !past && onFreeze && (
           <button type="button" onClick={onFreeze} className="min-h-9 rounded-full bg-card px-3 text-[14px] font-semibold">
             Move to freezer
           </button>
@@ -505,7 +539,7 @@ function LotRow({ l, tz, now, onGone, onFreeze }: { l: Lot; tz: string; now: num
         <button type="button" onClick={onGone} className="min-h-9 rounded-full bg-card px-3 text-[14px] font-semibold">
           {past ? 'Thrown away' : 'Used or gone'}
         </button>
-      </div>
+      </div>}
     </li>
   )
 }

@@ -23,7 +23,7 @@
 //   { action: "delete", id }            -> { ok }   (only entries that were logged from Ghar)
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { sweetSpot } from './sweetspot.js'
-import { expectedMl, feedNudge, localMidnight, milkStash, nappyNudge, pumpDue, routineNudges, vitaminsLeft } from './alerts.js'
+import { expectedMl, feedNudge, localMidnight, milkStash, nappyNudge, pumpDue, readStashCount, routineNudges, vitaminsLeft } from './alerts.js'
 
 const GHAR_URL = 'https://sfjzdkajewcrcqzbpyou.supabase.co'
 const DAY = 86_400_000
@@ -197,7 +197,7 @@ async function status(client: Row, link: Row, days: number) {
       .in('type', ['pump', 'bottle'])
       .gte('started_at', new Date(now - 190 * DAY).toISOString())
       .limit(5000)
-    const st = milkStash((milk ?? []) as never, now)
+    const st = milkStash((milk ?? []) as never, now, readStashCount(child?.settings))
     if (st.lots.length) {
       const o = st.lots[0]
       stash = { fridge_ml: st.fridgeMl, freezer_ml: st.freezerMl, oldest: { place: o.place, ml: o.left, use_by: new Date(o.useBy).toISOString() } }

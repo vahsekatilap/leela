@@ -9,7 +9,7 @@
 //   past its 4 days. Calm and clear, with what to do.
 // No libraries: the server's notifications use the same code.
 import { activityKind, clockOf, habits, late, minuteNow, usualTimes } from './routine'
-import { milkStash } from './stash'
+import { milkStash, type StashCount } from './stash'
 
 const MIN = 60_000
 const H = 3_600_000
@@ -148,9 +148,9 @@ export function pumpLongGapNudge(p: Due, now: number, tz: string): Nudge | null 
 }
 
 /** Important: fridge milk that passed its 4 days in the last day and is still counted. */
-export function fridgePastNudge(events: Ev[], now: number, tz: string): Nudge[] {
-  return milkStash(events as never, now)
-    .lots.filter((l) => l.place === 'fridge' && l.useBy <= now && l.useBy > now - DAY)
+export function fridgePastNudge(events: Ev[], now: number, tz: string, count?: StashCount | null): Nudge[] {
+  return milkStash(events as never, now, count)
+    .lots.filter((l) => l.place === 'fridge' && !l.id.startsWith('count-') && l.useBy <= now && l.useBy > now - DAY)
     .map((l) => ({
       slot: `imp/stash/${l.id}`,
       important: true,

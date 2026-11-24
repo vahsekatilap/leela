@@ -577,7 +577,13 @@ async function onEditConflict(op: OutboxOp) {
   const { data } = await supabase.from('events').select('*').eq('id', op.rowId).maybeSingle<LeelaEvent>()
   if (!data) return
   const s = getState()
-  const name = data.updated_by && data.updated_by !== s.userId ? s.profiles[data.updated_by]?.display_name || 'Someone' : 'Someone'
+  // Only ask when another person really changed it. A change that came from this phone itself (a
+  // timer stopped, an amount added just before) isn't a clash: save on top, quietly.
+  if (!data.updated_by || data.updated_by === s.userId) {
+    await enqueue({ ...op, seq: undefined, ifUpdatedAt: undefined })
+    return
+  }
+  const name = s.profiles[data.updated_by]?.display_name || 'Someone'
   s.upsertEvents([data], { force: true })
   s.set({ conflict: { eventId: op.rowId, patch: op.patch ?? {}, byName: name } })
 }

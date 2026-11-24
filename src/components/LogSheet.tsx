@@ -12,7 +12,7 @@ import {
   TYPES,
 } from '../lib/config'
 import { DOSE_GAPS, pumpDue } from '../lib/alerts'
-import { milkStash } from '../lib/stash'
+import { milkStash, readStashCount } from '../lib/stash'
 import { activityKind, habits } from '../lib/routine'
 import { eventTitle } from '../lib/describe'
 import { activeChild, myPrefs, useLeela } from '../lib/store'
@@ -959,7 +959,8 @@ const ACT_LABELS: Record<string, string> = Object.fromEntries(ACTIVITY_KINDS.map
 
 /** A breast-milk bottle: fresh, or from the fridge or freezer stash. */
 function StashFrom({ value, onChange, events }: { value: EventData['stash']; onChange: (v: EventData['stash']) => void; events: LeelaEvent[] }) {
-  const stash = useMemo(() => milkStash(events as never, Date.now()), [events])
+  const child = activeChild()
+  const stash = useMemo(() => milkStash(events as never, Date.now(), readStashCount(child?.settings)), [events, child?.settings])
   if (!stash.fridgeMl && !stash.freezerMl && (value === undefined || value === 'fresh')) return null
   return (
     <Field label="From">

@@ -13,7 +13,7 @@
 // (action "test"). Deploy with verify_jwt = false: this function checks the secret or the user.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { sweetSpot } from './sweetspot.js'
-import { clockText, dayCounts, stashExpiring, stashText, localDay, localMidnight, localMinute, medicinesDue, pumpDue, expectedMl, hoursText, routineNudges, feedNudge, fridgePastNudge, nappyNudge, pumpLongGapNudge, pumpNudge, vitaminsNudge, vitaminsLeft, weekText, readAlerts, summaryText, vaccinePlan, vaccineReminder } from './alerts.js'
+import { clockText, dayCounts, readStashCount, stashExpiring, stashText, localDay, localMidnight, localMinute, medicinesDue, pumpDue, expectedMl, hoursText, routineNudges, feedNudge, fridgePastNudge, nappyNudge, pumpLongGapNudge, pumpNudge, vitaminsNudge, vitaminsLeft, weekText, readAlerts, summaryText, vaccinePlan, vaccineReminder } from './alerts.js'
 import { sendPush, type Vapid } from './webpush.ts'
 
 const DAY = 86_400_000
@@ -261,10 +261,11 @@ async function others(admin: Db, vapid: Vapid, now: number, subs: Sub[], member:
     const phones = subs.filter((s) => s.family_id === fam.id && member.has(`${s.family_id}/${s.user_id}`) && want(s).stash)
     if (!kid || !phones.length || hour < 8 || hour >= 22) continue
     const famEvents = ((emptying ?? []) as Row[]).filter((e) => e.family_id === fam.id)
-    for (const lot of stashExpiring(famEvents as never, now)) {
+    const counted = readStashCount(kid.settings)
+    for (const lot of stashExpiring(famEvents as never, now, 12 * H, counted)) {
       for (const sub of phones) await send(sub, kid, `stash/${lot.id}`, { ...stashText(lot, tz), tag: `stash-${fam.id}`, open: 'pumping' })
     }
-    for (const n of fridgePastNudge(famEvents as never, now, tz)) {
+    for (const n of fridgePastNudge(famEvents as never, now, tz, counted)) {
       for (const sub of phones) if (want(sub).important) await send(sub, kid, n.slot, { title: n.title, body: n.body, tag: `important-${fam.id}`, open: 'pumping' })
     }
   }
