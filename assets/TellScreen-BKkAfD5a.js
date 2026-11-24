@@ -1,0 +1,1 @@
+import{t as e}from"./AddRecords-U7qATzD_.js";import{y as t}from"./index-D6Q5BIlp.js";import{p as n}from"./ui-XR7kgWwZ.js";var r=n();function i({open:n,onClose:i}){return(0,r.jsx)(t,{open:n,onClose:i,title:`Add records · voice or text`,children:n&&(0,r.jsx)(e,{})})}export{i as TellScreen};
