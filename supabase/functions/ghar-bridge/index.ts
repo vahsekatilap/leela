@@ -14,6 +14,8 @@
 //      vitamins { list: [name], left: [name] }
 //      (added 22 Nov 2026) stash { fridge_ml, freezer_ml, oldest: { place, ml, use_by } | null },
 //      nudges [{ title, body, important }]: the same gentle words and Important notes LAPdiary shows
+//      (added 25 Nov 2026) feeding { kind: 'breast'|'bottle', since, side: 'left'|'right'|null, paused } | null:
+//      a feed timer running in LAPdiary right now
 //   { action: "log", kind: "sleep"|"wake"|"feed"|"nappy"|"note"|"activity"|"vitamin", at?, room?, detail? } -> { ok, id }
 //      activity: detail "Massage", "Bath", "Tummy time", "Outing: <place>"; vitamin: detail = its name
 //      feed: detail "Breast" | "Bottle" | "Formula" | "Solids", optionally "· 90 ml" and, for breast
@@ -156,6 +158,8 @@ async function status(client: Row, link: Row, days: number) {
   const running = mine.find((e) => e.type === 'sleep' && e.timer_state && !e.ended_at)
   const lastSleep = mine.find((e) => e.type === 'sleep')
   const lastFeed = mine.find((e) => FEEDS.has(e.type) && !e.data?.drink)
+  // A breastfeed or bottle being timed in LAPdiary right now.
+  const feeding = mine.find((e) => (e.type === 'nursing' || e.type === 'bottle') && e.timer_state && !e.ended_at)
   const lastNappy = mine.find((e) => e.type === 'diaper')
   let ss: Row | null = null
   try {
@@ -204,7 +208,7 @@ async function status(client: Row, link: Row, days: number) {
   // Gentle nudges and Important notes, as LAPdiary shows them (never while she sleeps).
   const nudges: Row[] = []
   try {
-    if (!running && child) {
+    if (!running && !feeding && child) {
       const day = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(now)
       const f = ss?.feed && (ss.status === 'ok' || ss.status === 'newborn') ? feedNudge(ss.feed as never, ss.ageDays, child.name, mine as never, link.child_id, now, tz) : null
       const n = nappyNudge(mine as never, link.child_id, child.name, ss?.ageDays ?? null, now, tz)
@@ -239,6 +243,14 @@ async function status(client: Row, link: Row, days: number) {
       vitamins: supplements.length ? { list: supplements, left: vitaminsLeft(child?.settings, mine as never, link.child_id, dayStart, now + 60_000) } : null,
       stash,
       nudges,
+      feeding: feeding
+        ? {
+          kind: feeding.type === 'nursing' ? 'breast' : 'bottle',
+          since: feeding.started_at,
+          side: feeding.type === 'nursing' ? (feeding.data?.last_side === 'right' ? 'right' : 'left') : null,
+          paused: feeding.timer_state === 'paused',
+        }
+        : null,
     },
     logs: asGharLogs(mine.filter((e) => Date.parse(e.started_at) >= cutoff || (e.ended_at && Date.parse(e.ended_at) >= cutoff)), names).slice(0, 300),
   }
